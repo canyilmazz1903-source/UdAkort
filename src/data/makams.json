@@ -1,0 +1,242 @@
+[
+  {
+    "id": "rast",
+    "name": "Rast",
+    "durak": "Rast (Sol / D3)",
+    "guclu": "Nevâ (Re / A3)",
+    "yeden": "Irak (Fa# / C#3 - 5k flat)",
+    "seyirType": "Çıkıcı",
+    "history": "Rast makamı, Türk müziğinin en eski ve en temel makamlarından biridir. Kelime anlamı 'doğru, düzgün' demektir. Klasik icralarda neşe, huzur ve ferahlık verici karakteriyle bilinir. Seyri çıkıcıdır, yani durak sesi olan Rast (Sol) perdesinden başlayarak yukarıya doğru genişler.",
+    "intervals": [9, 5, 8, 9, 9, 5, 8],
+    "scaleNotes": ["Rast (Sol)", "Dügâh (La)", "Segâh (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Eviç (Fa#)", "Gerdaniye (Sol)"],
+    "scaleCommas": [0, 9, 14, 22, 31, 40, 48, 53],
+    "compositions": [
+      { "title": "Yine Bir Gülnihal", "form": "Semai", "composer": "Dede Efendi" },
+      { "title": "Rast Kar-ı Muhteşem", "form": "Kâr", "composer": "Itri" },
+      { "title": "Gülşende Yine Âh ü Enin", "form": "Şarkı", "composer": "Şevki Bey" }
+    ],
+    "seyirSteps": [
+      { "text": "Durak Rast (Sol) sesinden başlayarak yeden perdesi Irak gösterilir.", "direction": "down" },
+      { "text": "Rast Beşlisi (Rast-Dügah-Segah-Çargah-Neva) içinde çıkıcı melodiler kurulur.", "direction": "up" },
+      { "text": "Güçlü Nevâ perdesinde yarım karar yapılır.", "direction": "flat" },
+      { "text": "Neva üzerindeki Rast Dörtlüsü (Neva-Hüseyni-Eviç-Gerdaniye) ile tiz seslere çıkılır.", "direction": "up" },
+      { "text": "Melodiler pesleşerek Rast (Sol) perdesinde tam karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "ussak",
+    "name": "Uşşak",
+    "durak": "Dügâh (La / E3)",
+    "guclu": "Nevâ (Re / A3)",
+    "yeden": "Rast (Sol / D3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Uşşak makamı, kelime anlamı olarak 'aşıklar' demektir. Türk müziğinde halk ezgilerinden klasik eserlere kadar son derece yaygın kullanılan bir makamdır. İçli, hüzünlü ve mistik bir karaktere sahiptir. Seyri çıkıcı-inicidir.",
+    "intervals": [8, 5, 9, 9, 8, 5, 9],
+    "scaleNotes": ["Dügâh (La)", "Segâh (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Acem (Fa)", "Gerdaniye (Sol)", "Muhayyer (La)"],
+    "scaleCommas": [0, 8, 13, 22, 31, 39, 44, 53],
+    "compositions": [
+      { "title": "Bu Akşam Gün Batarken Gel", "form": "Şarkı", "composer": "Tatyos Efendi" },
+      { "title": "Uşşak Saz Semaisi", "form": "Saz Semaisi", "composer": "Cemil Bey" },
+      { "title": "Akşam Dönüşü Geçtim", "form": "Şarkı", "composer": "Kemani Serkis Efendi" }
+    ],
+    "seyirSteps": [
+      { "text": "Dügâh (La) çevresinden melodilerle başlanır, Rast (Sol) yedeni gösterilir.", "direction": "flat" },
+      { "text": "Uşşak Dörtlüsü (Dügah-Segah-Çargah-Neva) kullanılarak Nevâ perdesine yükselinir.", "direction": "up" },
+      { "text": "Güçlü Nevâ perdesinde Uşşak çeşnisi vurgulanarak yarım karar verilir.", "direction": "flat" },
+      { "text": "Hüseyni üzerindeki Buselik Beşlisi (Hüseyni-Acem-Gerdaniye-Muhayyer) ile genişleme yapılır.", "direction": "up" },
+      { "text": "Uşşak perdesi Segâh (Si flat 5k) basılarak Dügâh perdesinde tam karar yapılır.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "hicaz",
+    "name": "Hicaz",
+    "durak": "Dügâh (La / E3)",
+    "guclu": "Nevâ (Re / A3)",
+    "yeden": "Rast (Sol / D3) veya Nim Zirgüle (Sol# / D#3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Hicaz makamı, Türk müziğinin en popüler ve en karakteristik mikrotonal makamlarındandır. İkinci derece perdesi (Hicaz perdesi, Do# 5k diyez) ile üçüncü derece perdesi (Nevâ) arasında artık ikili (12 koma) adı verilen geniş bir aralık bulunur. Coşkulu, mistik ve dramatik bir havası vardır.",
+    "intervals": [5, 13, 4, 9, 8, 5, 9],
+    "scaleNotes": ["Dügâh (La)", "Hicaz (Si)", "Nevâ (Re)", "Hüseynî (Mi)", "Eviç (Fa#)", "Gerdaniye (Sol)", "Muhayyer (La)", "Tiz Çargâh (Do)"],
+    "scaleCommas": [0, 5, 18, 22, 31, 39, 44, 53],
+    "compositions": [
+      { "title": "Değdi Saçlarıma Bahar Gülleri", "form": "Şarkı", "composer": "Bekir Sıtkı Sezgin" },
+      { "title": "Hicaz Hümayun Peşrevi", "form": "Peşrev", "composer": "Veli Dede" },
+      { "title": "Söyleyemem Derdimi", "form": "Şarkı", "composer": "Şakir Ağa" }
+    ],
+    "seyirSteps": [
+      { "text": "Dügâh (La) ve Nevâ (Re) perdeleri arasında Hicaz çeşnisi duyurularak başlanır.", "direction": "flat" },
+      { "text": "Nevâ perdesi etrafında melodiler yoğunlaştırılır ve yarım karar verilir.", "direction": "up" },
+      { "text": "Hüseyni perdesinden sonra Eviç (Fa# 5k flat) kullanılarak tizlere çıkılır.", "direction": "up" },
+      { "text": "Hicaz ailesinin diğer kolları (Uzzal, Hümayun) gösterilebilir.", "direction": "flat" },
+      { "text": "Hicaz perdesi basılarak Dügâh (La) perdesinde tam karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "nihavend",
+    "name": "Nihavend",
+    "durak": "Rast (Sol / D3)",
+    "guclu": "Nevâ (Re / A3)",
+    "yeden": "Nim Zirgüle (Sol# / D#3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Nihavend makamı, Batı müziğindeki doğal sol minör (G minor) ölçeğine en çok benzeyen makamdır. Ancak seyir kuralları ve Nim Zirgüle yedeniyle Türk müziği karakterini korur. Oldukça lirik, duygusal ve romantik bir havası vardır. Klasik eserlerde sıkça tercih edilmiştir.",
+    "intervals": [9, 4, 9, 9, 4, 9, 9],
+    "scaleNotes": ["Rast (Sol)", "Dügâh (La)", "Kürdî (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Nim Hisar (Mi)", "Gerdaniye (Sol)", "Muhayyer (La)"],
+    "scaleCommas": [0, 9, 13, 22, 31, 35, 44, 53],
+    "compositions": [
+      { "title": "Nihavend Saz Semaisi", "form": "Saz Semaisi", "composer": "Mesut Cemil" },
+      { "title": "Kimseye Etmem Şikâyet", "form": "Şarkı", "composer": "Kemani Serkis Efendi" },
+      { "title": "Bir İhtimal Daha Var", "form": "Şarkı", "composer": "Necip Mirkelamoğlu" }
+    ],
+    "seyirSteps": [
+      { "text": "Rast (Sol) ve Nevâ (Re) perdeleri arasında Nihavend (minör) yapısı kurularak başlanır.", "direction": "flat" },
+      { "text": "Güçlü Nevâ perdesinde Buselik vurgusuyla yarım karar yapılır.", "direction": "up" },
+      { "text": "Tizlerde Kürdi Beşlisi ile Muhayyer perdesine kadar genişlenir.", "direction": "up" },
+      { "text": "Melodi pesleşirken yeden perdesi olan Nim Zirgüle (Sol#) hissettirilir.", "direction": "down" },
+      { "text": "Rast (Sol) perdesinde nihai tam karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "segah",
+    "name": "Segâh",
+    "durak": "Segâh (Si / F#3 - 5k flat)",
+    "guclu": "Nevâ (Re / A3)",
+    "yeden": "Dügâh (La / E3)",
+    "seyirType": "Çıkıcı",
+    "history": "Segâh makamı, Türk müziğinin en karakteristik 'çeyrek sesli' makamlarından biridir. Durak perdesi Segâh (Si flat 5 koma) perdesidir. Tınısı son derece mistik, huzurlu ve içe dönüktür. Karar sesi tam olarak Batı müziğindeki Si veya Si bemol değildir, tam aradaki mikrotonal perdedir.",
+    "intervals": [5, 8, 9, 8, 5, 9, 9],
+    "scaleNotes": ["Segâh (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Eviç (Fa#)", "Gerdaniye (Sol)", "Muhayyer (La)", "Tiz Bûselik (Si)"],
+    "scaleCommas": [0, 5, 13, 22, 30, 35, 44, 53],
+    "compositions": [
+      { "title": "Segâh Ayin-i Şerifi", "form": "Mevlevi Ayini", "composer": "Itri" },
+      { "title": "Segâh Saz Semaisi", "form": "Saz Semaisi", "composer": "Kemani Tatyos Efendi" },
+      { "title": "Dönülmez Akşamın Ufkundayız", "form": "Şarkı", "composer": "Münir Nurettin Selçuk" }
+    ],
+    "seyirSteps": [
+      { "text": "Durak Segâh (Si flat 5k) perdesi civarından çıkıcı melodilerle başlanır.", "direction": "up" },
+      { "text": "Segah-Çargah-Neva üçlüsü vurgulanarak Nevâ perdesinde yarım karar yapılır.", "direction": "up" },
+      { "text": "Nevâ üzerindeki Hicaz Dörtlüsü (Neva-Hüseyni-Eviç-Gerdaniye) ile tizlere çıkılır.", "direction": "up" },
+      { "text": "Yeden perdesi olan Dügâh (La) perdesi melodi arasında hissettirilir.", "direction": "down" },
+      { "text": "Segâh (Si flat 5k) perdesine basılarak tam karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "huseyni",
+    "name": "Hüseynî",
+    "durak": "Dügâh (La / E3)",
+    "guclu": "Hüseynî (Mi / B3)",
+    "yeden": "Rast (Sol / D3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Hüseynî makamı, Türk halk müziğinde (Kerem ayağı vb.) ve sanat müziğinde en çok kullanılan makamlardan biridir. Kelime anlamı 'küçük sevgili' veya 'güzellik' demektir. Uşşak makamı ile aynı ses dizisini paylaşır ancak güçlü perdesi Hüseynî (Mi) perdesidir ve bu perde melodilerde çok daha baskındır.",
+    "intervals": [8, 5, 9, 9, 8, 5, 9],
+    "scaleNotes": ["Dügâh (La)", "Segâh (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Gerdaniye (Sol)", "Muhayyer (La)", "Tiz Bûselik (Si)"],
+    "scaleCommas": [0, 8, 13, 22, 31, 40, 48, 53],
+    "compositions": [
+      { "title": "Hüseynî Saz Semaisi", "form": "Saz Semaisi", "composer": "Lavtacı Andon" },
+      { "title": "Hani Ya Sen Benimdin", "form": "Şarkı", "composer": "Kaptanzade Ali Rıza Bey" },
+      { "title": "Çanakkale Türküsü", "form": "Türkü", "composer": "Anonim" }
+    ],
+    "seyirSteps": [
+      { "text": "Dügâh (La) veya Nevâ (Re) perdesinden başlanarak Uşşak tarzında melodi kurulur.", "direction": "up" },
+      { "text": "Güçlü Hüseynî (Mi) perdesinde ısrarlı kalışlar yapılarak yarım karar verilir.", "direction": "up" },
+      { "text": "Hüseyni üzerindeki Uşşak Dörtlüsü (Hüseyni-Eviç-Gerdaniye-Muhayyer) ile tizler duyurulur.", "direction": "up" },
+      { "text": "Melodiler yavaşça pesleşir ve Uşşak perdeleri (özellikle Segah) basılır.", "direction": "down" },
+      { "text": "Rast yeden perdesi भी gösterildikten sonra Dügâh (La) perdesinde karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "kurdi",
+    "name": "Kürdî",
+    "durak": "Dügâh (La / E3)",
+    "guclu": "Nevâ (Re / A3)",
+    "yeden": "Rast (Sol / D3)",
+    "seyirType": "Çıkıcı",
+    "history": "Kürdî makamı, Türk müziğinde ikinci derecesi yarım ses pes (Kürdî perdesi, Si flat 4-koma) olan çıkıcı karakterli bir makamdır. Batı müziğindeki Frigyen (Phrygian) moduna denk gelir. Oldukça melankolik, tutkulu ve hüzünlü bir havası vardır.",
+    "intervals": [4, 9, 9, 9, 4, 9, 9],
+    "scaleNotes": ["Dügâh (La)", "Kürdî (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Acem (Fa)", "Gerdaniye (Sol)", "Muhayyer (La)"],
+    "scaleCommas": [0, 4, 13, 22, 31, 35, 44, 53],
+    "compositions": [
+      { "title": "Kürdî Saz Semaisi", "form": "Saz Semaisi", "composer": "Kemani Sadi Işılay" },
+      { "title": "Geçsin Günler Haftalar", "form": "Şarkı", "composer": "Erol Sayan" },
+      { "title": "Duydum ki Unutmuşsun", "form": "Şarkı", "composer": "Selahattin Altınbaş" }
+    ],
+    "seyirSteps": [
+      { "text": "Dügâh (La) ve Çârgâh (Do) perdeleri civarından Kürdî (flat 4k) perdesi basılarak çıkılır.", "direction": "up" },
+      { "text": "Nevâ (Re) perdesinde yarım karar verilir.", "direction": "up" },
+      { "text": "Neva üzerindeki Kürdi Beşlisi (Neva-Hüseyni-Acem-Gerdaniye-Muhayyer) ile genişlenir.", "direction": "up" },
+      { "text": "Melodiler inici adımlarla pesleşirken Kürdî perdesi temiz basılır.", "direction": "down" },
+      { "text": "Dügâh (La) perdesinde tam karar yapılır.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "saba",
+    "name": "Saba",
+    "durak": "Dügâh (La / E3)",
+    "guclu": "Çârgâh (Do / G3)",
+    "yeden": "Rast (Sol / D3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Saba makamı, Türk müziğinin en hüzünlü, ağlamaklı ve tasavvufi yönü en güçlü makamıdır. Sabah ezanlarında sıkça okunmasıyla bilinir. Saba makamı, Neva (Re) perdesini pestleştirerek (Saba perdesi, flat 3-koma) kendine has bükük ve ezik tınısını oluşturur. Çok zengin bir mikrotonal yapıya sahiptir.",
+    "intervals": [8, 5, 4, 8, 5, 9, 9],
+    "scaleNotes": ["Dügâh (La)", "Segâh (Si)", "Çârgâh (Do)", "Saba (Re)", "Hicaz (Si)", "Acem (Fa)", "Gerdaniye (Sol)", "Muhayyer (La)"],
+    "scaleCommas": [0, 8, 13, 17, 25, 30, 39, 48],
+    "compositions": [
+      { "title": "Saba Mevlevi Ayini", "form": "Mevlevi Ayini", "composer": "Dede Efendi" },
+      { "title": "Saba Saz Semaisi", "form": "Saz Semaisi", "composer": "Cemil Bey" },
+      { "title": "Uçsun Kağıt Helvalar", "form": "Şarkı", "composer": "Sadettin Kaynak" }
+    ],
+    "seyirSteps": [
+      { "text": "Dügâh (La) perdesinden başlanarak Segâh ve Çârgâh perdeleri duyurulur.", "direction": "up" },
+      { "text": "Çârgâh perdesinde Saba karakteri verilerek yarım karar yapılır.", "direction": "flat" },
+      { "text": "Saba (pest Re) perdesi ve Hicaz perdesi kullanılarak yukarı tırmanılır.", "direction": "up" },
+      { "text": "Tizlerde Gerdaniye and Muhayyer üzerinde Saba genişlemesi yapılır.", "direction": "up" },
+      { "text": "Makamın özgün basamakları izlenerek Dügâh (La) perdesinde tam karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "huzzam",
+    "name": "Hüzzam",
+    "durak": "Hüzzam (Si / F#3 - 5k flat)",
+    "guclu": "Nevâ (Re / A3) veya Gerdaniye (Sol / D4)",
+    "yeden": "Dügâh (La / E3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Hüzzam makamı, kelime anlamı olarak 'hüzünlü, acılı' demektir. Durak perdesi Hüzzam (Segah perdesinin türedir) perdesidir. İçinde Hicaz ve Segah geçişleri barındırır. Son derece hisli, yalvarış dolu ve zengin melodilere elverişli bir makamdır.",
+    "intervals": [5, 12, 8, 4, 9, 5, 9],
+    "scaleNotes": ["Hüzzam (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Eviç (Fa#)", "Gerdaniye (Sol)", "Muhayyer (La)", "Tiz Bûselik (Si)"],
+    "scaleCommas": [0, 5, 17, 25, 29, 38, 43, 52],
+    "compositions": [
+      { "title": "Hüzzam Peşrevi", "form": "Peşrev", "composer": "Neyzen Yusuf Paşa" },
+      { "title": "Hüzzam Saz Semaisi", "form": "Saz Semaisi", "composer": "Kemani Tatyos Efendi" },
+      { "title": "Kadehinde Zehir Olsa", "form": "Şarkı", "composer": "Rüştü Şardağ" }
+    ],
+    "seyirSteps": [
+      { "text": "Hüzzam (Si flat 5k) ve Çârgâh perdeleri kullanılarak Nevâ (Re) perdesine tırmanılır.", "direction": "up" },
+      { "text": "Nevâ (Re) perdesinde yarım karar verilir.", "direction": "flat" },
+      { "text": "Nevâ üzerindeki Hicaz geçişleriyle Eviç ve Gerdaniye perdeleri tınlatılır.", "direction": "up" },
+      { "text": "Pes seslerde Dügâh perdesi yeden olarak hissettirilir.", "direction": "down" },
+      { "text": "Hüzzam (Si flat 5k) perdesinde karar kılınarak tam karar verilir.", "direction": "down" }
+    ]
+  },
+  {
+    "id": "buselik",
+    "name": "Buselik",
+    "durak": "Dügâh (La / E3)",
+    "guclu": "Hüseynî (Mi / B3)",
+    "yeden": "Nim Zirgüle (Sol# / D#3)",
+    "seyirType": "Çıkıcı-İnici",
+    "history": "Buselik makamı, Batı müziğindeki La minör (A minor) ölçeğine neredeyse tam karşılık gelen klasik bir makamdır. Çok asil, vakur ve duygusal bir karaktere sahiptir. Nim Zirgüle (Sol#) perdesi yeden olarak sıkça kullanılır.",
+    "intervals": [9, 4, 9, 9, 4, 9, 9],
+    "scaleNotes": ["Dügâh (La)", "Bûselik (Si)", "Çârgâh (Do)", "Nevâ (Re)", "Hüseynî (Mi)", "Acem (Fa)", "Gerdaniye (Sol)", "Muhayyer (La)"],
+    "scaleCommas": [0, 9, 13, 22, 31, 40, 44, 53],
+    "compositions": [
+      { "title": "Buselik Saz Semaisi", "form": "Saz Semaisi", "composer": "Tanburi Cemil Bey" },
+      { "title": "Ruhumda Neşe Söndü", "form": "Şarkı", "composer": "Rifat Bey" },
+      { "title": "Buselik Peşrevi", "form": "Peşrev", "composer": "Kantemiroğlu" }
+    ],
+    "seyirSteps": [
+      { "text": "Dügâh (La) ve Hüseynî (Mi) perdeleri arasında çıkıcı hareketlerle başlanır.", "direction": "up" },
+      { "text": "Güçlü Hüseynî (Mi) perdesinde yarım karar yapılır.", "direction": "flat" },
+      { "text": "Tizlerde Kürdi Dörtlüsü ile Muhayyer perdesine genişleme yapılır.", "direction": "up" },
+      { "text": "Melodiler aşağı kaydırılırken yeden Nim Zirgüle (Sol#) temiz basılır.", "direction": "down" },
+      { "text": "Dügâh (La) perdesinde Buselik Dörtlüsü ile tam karar verilir.", "direction": "down" }
+    ]
+  }
+]

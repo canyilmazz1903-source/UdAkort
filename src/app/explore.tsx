@@ -1,180 +1,561 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import { useAppStore } from '../store/useAppStore';
+import { CommaRibbon } from '../components/CommaRibbon';
+import { playUdPluck, stopCurrentSound } from '../utils/audioPlayer';
+import { getPlaybackRateForFrequency } from '../utils/tsmEngine';
+import { Music, Play, Square, ArrowRight, BookOpen, Compass, Award } from 'lucide-react-native';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+// Import makam database
+const makamData = require('../data/makams.json');
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+interface Makam {
+  id: string;
+  name: string;
+  durak: string;
+  guclu: string;
+  yeden: string;
+  seyirType: string;
+  history: string;
+  intervals: number[];
+  scaleNotes: string[];
+  scaleCommas: number[];
+  compositions: { title: string; form: string; composer: string }[];
+  seyirSteps: { text: string; direction: 'up' | 'down' | 'flat' }[];
+}
+
+export default function MakamScreen() {
+  const selectedMakamId = useAppStore((state) => state.selectedMakamId);
+  const setSelectedMakamId = useAppStore((state) => state.setSelectedMakamId);
+  const isScalePlaying = useAppStore((state) => state.isScalePlaying);
+  const setIsScalePlaying = useAppStore((state) => state.setIsScalePlaying);
+  const currentPlayingNoteIndex = useAppStore((state) => state.currentPlayingNoteIndex);
+  const setCurrentPlayingNoteIndex = useAppStore((state) => state.setCurrentPlayingNoteIndex);
+
+  const selectedMakam: Makam = makamData.find((m: any) => m.id === selectedMakamId) || makamData[0];
+
+  useEffect(() => {
+    // Stop any playing sound on leave
+    return () => {
+      stopCurrentSound();
+    };
+  }, [selectedMakamId]);
+
+  // Helper to determine the tonic frequency (karar perdesi) of the selected makam
+  const getTonicFrequency = (id: string): number => {
+    if (id === 'rast' || id === 'nihavend') return 146.83; // Rast Sol3 (sounds like D3)
+    if (id === 'segah' || id === 'huzzam') return 173.88; // Segah Si3 (5k flat)
+    return 164.81; // Dügah La3 (sounds like E3)
   };
-  const theme = useTheme();
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+  // Play a single note from the makam scale
+  const playScaleNote = async (index: number) => {
+    const tonicFreq = getTonicFrequency(selectedMakam.id);
+    const commaShift = selectedMakam.scaleCommas[index];
+    const targetFreq = tonicFreq * Math.pow(2, commaShift / 53);
+
+    const { sampleName, rate } = getPlaybackRateForFrequency(targetFreq);
+    await playUdPluck(sampleName, rate);
+  };
+
+  // Automated playback of the entire scale
+  const handlePlayScale = async () => {
+    if (isScalePlaying) {
+      setIsScalePlaying(false);
+      setCurrentPlayingNoteIndex(null);
+      await stopCurrentSound();
+      return;
+    }
+
+    setIsScalePlaying(true);
+    let noteIndex = 0;
+
+    const playNext = async () => {
+      // Check if user clicked stop
+      if (!useAppStore.getState().isScalePlaying) return;
+
+      if (noteIndex < selectedMakam.scaleNotes.length) {
+        setCurrentPlayingNoteIndex(noteIndex);
+        await playScaleNote(noteIndex);
+        noteIndex++;
+        // Play next note after 700ms
+        setTimeout(playNext, 700);
+      } else {
+        // Finished playing scale
+        setIsScalePlaying(false);
+        setCurrentPlayingNoteIndex(null);
+      }
+    };
+
+    playNext();
+  };
+
+  const renderDirectionIcon = (direction: 'up' | 'down' | 'flat') => {
+    if (direction === 'up') return <Text style={[styles.arrowText, { color: '#D4AF37' }]}>↗</Text>;
+    if (direction === 'down') return <Text style={[styles.arrowText, { color: '#B22222' }]}>↘</Text>;
+    return <Text style={[styles.arrowText, { color: '#808000' }]}>→</Text>;
+  };
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* Screen Header */}
+        <View style={styles.header}>
+          <Text style={styles.screenTitle}>Makam Rehberi</Text>
+          <Text style={styles.screenSubtitle}>Klasik Türk Musikisi Dizi ve Seyirleri</Text>
+        </View>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+        {/* Makam Horizontal Selector List */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.makamSelectorScroll}
+          contentContainerStyle={styles.makamSelectorContainer}
+        >
+          {makamData.map((makam: Makam) => {
+            const isSelected = selectedMakamId === makam.id;
+            return (
+              <TouchableOpacity
+                key={makam.id}
+                style={[
+                  styles.makamCard,
+                  isSelected && styles.makamCardActive
+                ]}
+                onPress={() => {
+                  setSelectedMakamId(makam.id);
+                  setIsScalePlaying(false);
+                  setCurrentPlayingNoteIndex(null);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={[
+                  styles.makamCardName,
+                  isSelected && styles.makamCardNameActive
+                ]}>
+                  {makam.name}
+                </Text>
+                <Text style={styles.makamCardSub}>{makam.seyirType}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+        {/* Selected Makam Detail Card */}
+        <View style={styles.detailContainer}>
+          <View style={styles.detailHeader}>
+            <View>
+              <Text style={styles.makamTitle}>{selectedMakam.name} Makamı</Text>
+              <Text style={styles.makamInfoSub}>Seyir: {selectedMakam.seyirType}</Text>
+            </View>
+            <BookOpen size={24} color="#808000" />
+          </View>
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
+          {/* Quick Info Grid */}
+          <View style={styles.infoGrid}>
+            <View style={styles.infoGridItem}>
+              <Text style={styles.infoGridLabel}>Durak (Karar)</Text>
+              <Text style={styles.infoGridValue}>{selectedMakam.durak}</Text>
+            </View>
+            <View style={styles.infoGridItem}>
+              <Text style={styles.infoGridLabel}>Güçlü (Miyane)</Text>
+              <Text style={styles.infoGridValue}>{selectedMakam.guclu}</Text>
+            </View>
+            <View style={styles.infoGridItem}>
+              <Text style={styles.infoGridLabel}>Yeden (Tonik Altı)</Text>
+              <Text style={styles.infoGridValue}>{selectedMakam.yeden}</Text>
+            </View>
+          </View>
 
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+          {/* Description */}
+          <Text style={styles.makamDescription}>{selectedMakam.history}</Text>
+        </View>
 
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+        {/* Interactive Scale Notes Player */}
+        <View style={styles.scaleContainer}>
+          <View style={styles.scaleHeader}>
+            <Text style={styles.scaleTitle}>MAKAM DİZİSİ (NOTALAR)</Text>
+            
+            {/* Play Scale Button */}
+            <TouchableOpacity
+              style={[styles.playScaleButton, isScalePlaying && styles.playScaleButtonActive]}
+              onPress={handlePlayScale}
+              activeOpacity={0.8}
+            >
+              {isScalePlaying ? (
+                <>
+                  <Square size={14} color="#fff" style={styles.scalePlayIcon} />
+                  <Text style={styles.scalePlayText}>Durdur</Text>
+                </>
+              ) : (
+                <>
+                  <Play size={14} color="#D4AF37" style={styles.scalePlayIcon} fill="#D4AF37" />
+                  <Text style={[styles.scalePlayText, { color: '#D4AF37' }]}>Diziyi Çal</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
 
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+          {/* Note Buttons Row */}
+          <View style={styles.notesRow}>
+            {selectedMakam.scaleNotes.map((note, index) => {
+              const isSounding = currentPlayingNoteIndex === index;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.noteNodeButton,
+                    isSounding && styles.noteNodeButtonPlaying
+                  ]}
+                  onPress={() => playScaleNote(index)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.noteNodeLabel,
+                    isSounding && styles.noteNodeLabelPlaying
+                  ]}>
+                    {note}
+                  </Text>
+                  <Text style={styles.noteNodeCommas}>
+                    {selectedMakam.scaleCommas[index]}k
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Seyir Steps Flowchart */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Compass size={18} color="#D4AF37" />
+            <Text style={styles.sectionTitle}>SEYİR AKIŞ ŞEMASI</Text>
+          </View>
+
+          <View style={styles.flowchartContainer}>
+            {selectedMakam.seyirSteps.map((step, idx) => (
+              <View key={idx} style={styles.flowStepWrapper}>
+                <View style={styles.flowStepCard}>
+                  <View style={styles.flowStepHeader}>
+                    <Text style={styles.flowStepNumber}>ADIM {idx + 1}</Text>
+                    {renderDirectionIcon(step.direction)}
+                  </View>
+                  <Text style={styles.flowStepText}>{step.text}</Text>
+                </View>
+                {idx < selectedMakam.seyirSteps.length - 1 && (
+                  <View style={styles.flowConnector}>
+                    <ArrowRight size={16} color="#333" />
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Interactive AEÜ 53-comma fretboard component */}
+        <CommaRibbon />
+
+        {/* Masterpieces Archive */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Award size={18} color="#808000" />
+            <Text style={styles.sectionTitle}>İMZA ESERLER ARŞİVİ</Text>
+          </View>
+
+          <View style={styles.compositionsGrid}>
+            {selectedMakam.compositions.map((comp, idx) => (
+              <View key={idx} style={styles.compositionCard}>
+                <Music size={18} color="#444" style={styles.compIcon} />
+                <View style={styles.compInfo}>
+                  <Text style={styles.compTitle}>{comp.title}</Text>
+                  <Text style={styles.compComposer}>{comp.composer} ({comp.form})</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+  },
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 25 : 10,
+    paddingBottom: 40,
+    alignItems: 'stretch',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  screenTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  screenSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  makamSelectorScroll: {
+    marginBottom: 20,
+    marginHorizontal: -20,
+  },
+  makamSelectorContainer: {
+    paddingHorizontal: 20,
+    gap: 10,
+    height: 58,
+  },
+  makamCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#111',
+    borderWidth: 1,
+    borderColor: '#1d1d1d',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  makamCardActive: {
+    borderColor: '#808000', // Olive Green border
+    backgroundColor: 'rgba(128, 128, 0, 0.12)',
+  },
+  makamCardName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#888',
+  },
+  makamCardNameActive: {
+    color: '#D4AF37', // Gold name
+  },
+  makamCardSub: {
+    fontSize: 9,
+    color: '#444',
+    marginTop: 2,
+  },
+  detailContainer: {
+    backgroundColor: '#111',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1d1d1d',
+    padding: 16,
+    marginBottom: 20,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+    paddingBottom: 10,
+    marginBottom: 12,
+  },
+  makamTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  makamInfoSub: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 8,
+  },
+  infoGridItem: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    padding: 8,
+  },
+  infoGridLabel: {
+    fontSize: 9,
+    color: '#444',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  infoGridValue: {
+    fontSize: 11,
+    color: '#ccc',
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  makamDescription: {
+    fontSize: 12,
+    color: '#888',
+    lineHeight: 18,
+  },
+  scaleContainer: {
+    backgroundColor: '#111',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1d1d1d',
+    padding: 16,
+    marginBottom: 20,
+  },
+  scaleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  scaleTitle: {
+    fontSize: 11,
+    color: '#555',
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  playScaleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0a0a0a',
+    borderWidth: 1,
+    borderColor: '#808000',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  playScaleButtonActive: {
+    backgroundColor: '#B22222',
+    borderColor: '#8b0000',
+  },
+  scalePlayIcon: {
+    marginRight: 6,
+  },
+  scalePlayText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  notesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  noteNodeButton: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+    borderWidth: 1,
+    borderColor: '#1e1e1e',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteNodeButtonPlaying: {
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    borderColor: '#D4AF37',
+  },
+  noteNodeLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#888',
+  },
+  noteNodeLabelPlaying: {
+    color: '#D4AF37',
+  },
+  noteNodeCommas: {
+    fontSize: 8,
+    color: '#444',
+    marginTop: 4,
+  },
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  flowchartContainer: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 8,
+  },
+  flowStepWrapper: {
+    alignItems: 'stretch',
+  },
+  flowStepCard: {
+    backgroundColor: '#111',
+    borderWidth: 1,
+    borderColor: '#1d1d1d',
+    borderRadius: 10,
+    padding: 12,
+  },
+  flowStepHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  flowStepNumber: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#808000',
+    letterSpacing: 1,
+  },
+  arrowText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  flowStepText: {
+    fontSize: 11,
+    color: '#999',
+    lineHeight: 15,
+  },
+  flowConnector: {
+    alignItems: 'center',
+    marginVertical: 4,
+    transform: [{ rotate: '90deg' }], // rotate arrow down
+  },
+  compositionsGrid: {
+    gap: 8,
+  },
+  compositionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111',
+    borderWidth: 1,
+    borderColor: '#1d1d1d',
+    borderRadius: 10,
+    padding: 12,
+    gap: 12,
+  },
+  compIcon: {
+    opacity: 0.6,
+  },
+  compInfo: {
     flex: 1,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  compTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#eee',
   },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
+  compComposer: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 2,
   },
 });
