@@ -1,7 +1,7 @@
 {
   "name": "ud-akort",
   "main": "expo-router/entry",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependencies": {
     "@expo/ui": "~56.0.18",
     "@techoptio/react-native-live-pitch-detection": "^1.2.1",
