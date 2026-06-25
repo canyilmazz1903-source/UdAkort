@@ -19,6 +19,7 @@ export async function configureAudioForPlayback() {
     await setAudioModeAsync({
       playsInSilentMode: true,
       allowsRecording: true, // Needs to allow recording so tuner + player can work together
+      shouldRouteThroughEarpiece: false, // Ensure audio plays through speaker!
     });
   } catch (e) {
     console.warn('Failed to configure audio mode', e);
@@ -35,16 +36,23 @@ export async function playUdPluck(sampleName: string, rate: number = 1.0) {
       return;
     }
 
-    if (!playerInstance) {
-      playerInstance = createAudioPlayer(asset);
-    } else {
-      playerInstance.replace(asset);
+    // Stop and dereference previous sound if it is playing/loaded
+    if (playerInstance) {
+      try {
+        playerInstance.pause();
+      } catch (e) {
+        // Ignore
+      }
+      playerInstance = null;
     }
 
-    playerInstance.shouldCorrectPitch = false;
-    playerInstance.playbackRate = rate;
-    playerInstance.volume = 1.0;
-    playerInstance.play();
+    const player = createAudioPlayer(asset);
+    player.shouldCorrectPitch = false;
+    player.playbackRate = rate;
+    player.volume = 1.0;
+
+    playerInstance = player;
+    player.play();
   } catch (error) {
     console.error('Error playing sound:', error);
   }

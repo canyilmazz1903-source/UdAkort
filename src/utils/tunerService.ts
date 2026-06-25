@@ -1,4 +1,4 @@
-import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { Platform } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { getClosestTuningNote } from './tsmEngine';
@@ -49,6 +49,17 @@ export async function startTuning() {
       console.warn('Microphone permission denied');
       return;
     }
+  }
+
+  // Configure Audio Session for recording and playback (routing through speaker)
+  try {
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: true,
+      shouldRouteThroughEarpiece: false,
+    });
+  } catch (e) {
+    console.warn('Failed to configure audio mode for tuning', e);
   }
 
   store.setIsListening(true);

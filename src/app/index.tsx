@@ -5,7 +5,7 @@ import { TUNING_PRESETS } from '../utils/tsmEngine';
 import { startTuning, stopTuning, checkMicrophonePermission } from '../utils/tunerService';
 import { DeviationGauge } from '../components/DeviationGauge';
 import { Pegboard } from '../components/Pegboard';
-import { Play, Square, Mic, MicOff, Info } from 'lucide-react-native';
+import { Info } from 'lucide-react-native';
 
 export default function HomeScreen() {
   const {
@@ -20,22 +20,17 @@ export default function HomeScreen() {
   } = useAppStore();
 
   useEffect(() => {
-    // Check permission on mount
-    checkMicrophonePermission();
+    const initTuning = async () => {
+      await checkMicrophonePermission();
+      await startTuning();
+    };
+    initTuning();
     
     // Stop listening when leaving the screen
     return () => {
       stopTuning();
     };
   }, []);
-
-  const handleToggleListening = async () => {
-    if (isListening) {
-      await stopTuning();
-    } else {
-      await startTuning();
-    }
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -84,28 +79,6 @@ export default function HomeScreen() {
           komaDeviation={komaDeviation}
           isListening={isListening}
         />
-
-        {/* Listening Toggle Button */}
-        <TouchableOpacity
-          style={[
-            styles.micButton,
-            isListening ? styles.micButtonActive : styles.micButtonInactive
-          ]}
-          onPress={handleToggleListening}
-          activeOpacity={0.8}
-        >
-          {isListening ? (
-            <>
-              <MicOff size={18} color="#fff" style={styles.btnIcon} />
-              <Text style={styles.micButtonText}>Dinlemeyi Durdur</Text>
-            </>
-          ) : (
-            <>
-              <Mic size={18} color="#D4AF37" style={styles.btnIcon} />
-              <Text style={[styles.micButtonText, { color: '#D4AF37' }]}>Dinlemeyi Başlat</Text>
-            </>
-          )}
-        </TouchableOpacity>
 
         {/* Pegboard & String Interaction */}
         <Pegboard notes={currentPreset.notes} />
