@@ -102,7 +102,8 @@ workflows:
         script: |
           xcode-project build-ipa \
             --workspace ios/UdAkort.xcworkspace \
-            --scheme "UdAkort" || {
+            --scheme "UdAkort" \
+            --verbose || {
               echo "=== Export IPA Failed. Printing Codemagic Logs ==="
               cat $TMPDIR/codemagic-*.log 2>/dev/null || cat /var/folders/*/*/*/T/codemagic-*.log 2>/dev/null
               exit 1
