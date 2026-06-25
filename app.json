@@ -47,7 +47,14 @@
           "resizeMode": "contain",
           "imageWidth": 200
         }
-      ]
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Ud seslerini algılayıp akort yapabilmek için mikrofon izni gereklidir."
+        }
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

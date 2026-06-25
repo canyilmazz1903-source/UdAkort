@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 
 // Static asset mapping because React Native / Metro does not support dynamic requires
 const soundAssets: Record<string, any> = {
@@ -11,16 +11,14 @@ const soundAssets: Record<string, any> = {
   'g4': require('../../assets/sounds/g4.wav')
 };
 
-let soundInstance: Audio.Sound | null = null;
+let playerInstance: ReturnType<typeof createAudioPlayer> | null = null;
 
 // Configures Audio Category for Playback (ensures sound plays even in Silent Mode on iOS)
 export async function configureAudioForPlayback() {
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      allowsRecordingIOS: true, // Needs to allow recording so tuner + player can work together
-      staysActiveInBackground: false,
-      playThroughEarpieceAndroid: false
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: true, // Needs to allow recording so tuner + player can work together
     });
   } catch (e) {
     console.warn('Failed to configure audio mode', e);
@@ -31,56 +29,34 @@ export async function playUdPluck(sampleName: string, rate: number = 1.0) {
   try {
     await configureAudioForPlayback();
 
-    // Stop and unload previous sound if it is playing
-    if (soundInstance) {
-      try {
-        await soundInstance.unloadAsync();
-      } catch (e) {
-        // Already unloaded
-      }
-      soundInstance = null;
-    }
-
     const asset = soundAssets[sampleName.toLowerCase()];
     if (!asset) {
       console.warn(`Sound asset not found for sample: ${sampleName}`);
       return;
     }
 
-    const { sound } = await Audio.Sound.createAsync(
-      asset,
-      {
-        shouldPlay: true,
-        rate: rate,
-        shouldCorrectPitch: false, // Natural pitch-shifting (sampler style)
-        volume: 1.0
-      }
-    );
+    if (!playerInstance) {
+      playerInstance = createAudioPlayer(asset);
+    } else {
+      playerInstance.replace(asset);
+    }
 
-    soundInstance = sound;
-
-    // Clean up when playback finishes
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        sound.unloadAsync().catch(() => {});
-        if (soundInstance === sound) {
-          soundInstance = null;
-        }
-      }
-    });
+    playerInstance.shouldCorrectPitch = false;
+    playerInstance.playbackRate = rate;
+    playerInstance.volume = 1.0;
+    playerInstance.play();
   } catch (error) {
     console.error('Error playing sound:', error);
   }
 }
 
 export async function stopCurrentSound() {
-  if (soundInstance) {
+  if (playerInstance) {
     try {
-      await soundInstance.stopAsync();
-      await soundInstance.unloadAsync();
+      playerInstance.pause();
+      playerInstance.currentTime = 0;
     } catch (e) {
       // Ignore
     }
-    soundInstance = null;
   }
 }

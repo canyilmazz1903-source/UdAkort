@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import { Platform } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { getClosestTuningNote } from './tsmEngine';
@@ -16,7 +16,7 @@ let simulationInterval: any = null;
 
 export async function requestMicrophonePermission(): Promise<boolean> {
   try {
-    const { status } = await Audio.requestPermissionsAsync();
+    const { status } = await requestRecordingPermissionsAsync();
     const granted = status === 'granted';
     useAppStore.getState().setHasMicPermission(granted);
     return granted;
@@ -28,7 +28,7 @@ export async function requestMicrophonePermission(): Promise<boolean> {
 
 export async function checkMicrophonePermission(): Promise<boolean> {
   try {
-    const { status } = await Audio.getPermissionsAsync();
+    const { status } = await getRecordingPermissionsAsync();
     const granted = status === 'granted';
     useAppStore.getState().setHasMicPermission(granted);
     return granted;
