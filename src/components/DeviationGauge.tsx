@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions, Platform, useColorScheme, Animated } from 'react-native';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
+import { Colors, Fonts } from '@/constants/theme';
 
 interface DeviationGaugeProps {
   frequency: number;
@@ -25,8 +26,32 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
   komaDeviation,
   isListening
 }) => {
+  const scheme = useColorScheme();
+  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+
+  // Smooth Cents transition using Animated API to avoid jumpy needle movements
+  const [smoothCents, setSmoothCents] = useState(0);
+  const animatedCents = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const listenerId = animatedCents.addListener(({ value }) => {
+      setSmoothCents(value);
+    });
+    return () => {
+      animatedCents.removeListener(listenerId);
+    };
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(animatedCents, {
+      toValue: isListening && frequency > 0 ? centsDeviation : 0,
+      duration: 140, // glides smoothly over 140ms
+      useNativeDriver: false,
+    }).start();
+  }, [centsDeviation, frequency, isListening]);
+
   // Map cents deviation (-50 to +50) to angle (-120 to +120 degrees)
-  const clampedCents = Math.max(-50, Math.min(50, centsDeviation));
+  const clampedCents = Math.max(-50, Math.min(50, smoothCents));
   const angleDeg = (clampedCents / 50) * 120;
   const angleRad = ((angleDeg - 90) * Math.PI) / 180;
 
@@ -35,8 +60,9 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
   const pointerX = CENTER_X + pointerLength * Math.cos(angleRad);
   const pointerY = CENTER_Y + pointerLength * Math.sin(angleRad);
 
-  const inTune = Math.abs(centsDeviation) <= 5;
-  const activeColor = inTune ? '#808000' : centsDeviation > 5 ? '#D4AF37' : '#B22222'; // Olive Green / Gold / Firebrick Red
+  const inTune = Math.abs(centsDeviation) <= 4; // within 4 cents is in tune
+  // Pointer colors matching Makam & Rezen: Altın Gold if in tune, Ceviz Brown if off
+  const activeColor = inTune ? colors.secondary : colors.primary;
 
   // Generate ticks for gauge
   const ticks = [];
@@ -53,7 +79,7 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
     // Label offset
     const labelR = RADIUS - 22;
     const lx = CENTER_X + labelR * Math.cos(tickAngleRad);
-    const ly = CENTER_Y + labelR * Math.sin(tickAngleRad) + 4; // Adjust vertical centering
+    const ly = CENTER_Y + labelR * Math.sin(tickAngleRad) + 4;
 
     ticks.push(
       <React.Fragment key={i}>
@@ -62,17 +88,20 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
           y1={y1}
           x2={x2}
           y2={y2}
-          stroke={i === 0 ? '#808000' : '#444'}
-          strokeWidth={i === 0 ? 3 : 1.5}
+          stroke={i === 0 ? colors.secondary : colors.textSecondary}
+          strokeWidth={i === 0 ? 3 : 1.2}
+          opacity={i === 0 ? 1 : 0.4}
         />
         {i % 20 === 0 && (
           <SvgText
             x={lx}
             y={ly}
-            fill="#888"
+            fill={colors.textSecondary}
             fontSize="10"
+            fontFamily={Fonts.mono}
             textAnchor="middle"
             alignmentBaseline="middle"
+            opacity={0.7}
           >
             {i > 0 ? `+${i}` : i}
           </SvgText>
@@ -98,13 +127,13 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
           <Path
             d={arcPath}
             fill="none"
-            stroke="#2a2a2a"
-            strokeWidth="6"
+            stroke={colors.backgroundElement}
+            strokeWidth="5"
             strokeLinecap="round"
           />
 
           {/* Center Hub */}
-          <Circle cx={CENTER_X} cy={CENTER_Y} r="8" fill="#D4AF37" />
+          <Circle cx={CENTER_X} cy={CENTER_Y} r="8" fill={colors.secondary} />
           
           {/* Ticks */}
           {ticks}
@@ -127,32 +156,32 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
         <View style={styles.textOverlay}>
           {isListening && frequency > 0 ? (
             <>
-              <Text style={styles.westernNote}>{westernNote}</Text>
-              <Text style={[styles.noteName, { color: activeColor }]}>{noteName}</Text>
-              <Text style={styles.frequency}>{frequency.toFixed(2)} Hz</Text>
+              <Text style={[styles.westernNote, { color: colors.textSecondary }]}>{westernNote}</Text>
+              <Text style={[styles.noteName, { color: activeColor, fontFamily: Fonts.serifBold }]}>{noteName}</Text>
+              <Text style={[styles.frequency, { color: colors.textSecondary }]}>{frequency.toFixed(2)} Hz</Text>
               
               <View style={styles.deviationRow}>
                 <Text style={[styles.deviationText, { color: activeColor }]}>
-                  {clampedCents > 0 ? `+${clampedCents.toFixed(1)}` : clampedCents.toFixed(1)} sent
+                  {centsDeviation > 0 ? `+${centsDeviation.toFixed(1)}` : centsDeviation.toFixed(1)} sent
                 </Text>
-                <Text style={styles.separator}>|</Text>
+                <Text style={[styles.separator, { color: colors.backgroundSelected }]}>|</Text>
                 <Text style={[styles.deviationText, { color: activeColor }]}>
                   {komaDeviation > 0 ? `+${komaDeviation.toFixed(2)}` : komaDeviation.toFixed(2)} koma
                 </Text>
               </View>
 
               {inTune && (
-                <View style={styles.inTuneBadge}>
-                  <Text style={styles.inTuneText}>AKORT TAMAM</Text>
+                <View style={[styles.inTuneBadge, { borderColor: colors.secondary, backgroundColor: 'rgba(115, 92, 0, 0.12)' }]}>
+                  <Text style={[styles.inTuneText, { color: colors.secondary }]}>AKORT TAMAM</Text>
                 </View>
               )}
             </>
           ) : (
             <>
-              <Text style={styles.idleText}>
+              <Text style={[styles.idleText, { color: colors.textSecondary }]}>
                 {isListening ? 'Ses bekleniyor...' : 'Dinleme kapalı'}
               </Text>
-              <Text style={styles.idleSubText}>
+              <Text style={[styles.idleSubText, { color: colors.textSecondary }]}>
                 {isListening ? 'Telinize vurun' : 'Cihazı dinlemek için Başlatın'}
               </Text>
             </>
@@ -187,22 +216,19 @@ const styles = StyleSheet.create({
   },
   noteName: {
     fontSize: 32,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'HelveticaNeue-Bold' : 'sans-serif-condensed',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 2,
   },
   westernNote: {
     fontSize: 16,
-    color: '#888',
     letterSpacing: 1.5,
     marginBottom: -4,
+    fontFamily: Fonts.sansBold,
   },
   frequency: {
-    fontSize: 14,
-    color: '#aaa',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 13,
+    fontFamily: Fonts.mono,
     marginTop: 2,
   },
   deviationRow: {
@@ -211,36 +237,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   deviationText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontFamily: Fonts.monoBold,
   },
   separator: {
-    color: '#333',
     marginHorizontal: 8,
   },
   inTuneBadge: {
-    backgroundColor: 'rgba(128, 128, 0, 0.2)',
-    borderColor: '#808000',
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 4,
     marginTop: 10,
   },
   inTuneText: {
-    color: '#A2B574',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontFamily: Fonts.sansBold,
     letterSpacing: 1,
   },
   idleText: {
-    fontSize: 18,
-    color: '#666',
-    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: Fonts.sansBold,
   },
   idleSubText: {
     fontSize: 12,
-    color: '#444',
+    fontFamily: Fonts.sans,
     marginTop: 4,
+    opacity: 0.7,
   },
 });

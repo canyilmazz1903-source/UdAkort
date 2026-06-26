@@ -5,7 +5,7 @@ import { CommaRibbon } from '../components/CommaRibbon';
 import { StaffNotation } from '../components/StaffNotation';
 import { playUdPluck, stopCurrentSound } from '../utils/audioPlayer';
 import { getPlaybackRateForFrequency, TUNING_PRESETS, TuningPreset } from '../utils/tsmEngine';
-import { Music, Play, Square, ArrowRight, BookOpen, Compass, Award, Sliders } from 'lucide-react-native';
+import { Music, Play, Square, ArrowRight, BookOpen, Compass, Award, Sliders, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/theme';
 
 // Import makam database
@@ -126,6 +126,9 @@ export default function MakamScreen() {
   const currentPlayingNoteIndex = useAppStore((state) => state.currentPlayingNoteIndex);
   const setCurrentPlayingNoteIndex = useAppStore((state) => state.setCurrentPlayingNoteIndex);
 
+  // Selector menu collapsible state
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
   // Preset state for transposition (Şed)
   const [selectedPresetId, setSelectedPresetId] = useState<string>('bolahenk');
   const selectedPreset: TuningPreset = TUNING_PRESETS.find(p => p.id === selectedPresetId) || TUNING_PRESETS[0];
@@ -137,7 +140,6 @@ export default function MakamScreen() {
   const selectedMakam: Makam = makamData.find((m: any) => m.id === selectedMakamId) || makamData[0];
 
   useEffect(() => {
-    // Stop any playing sound on leave
     return () => {
       stopCurrentSound();
       stopSeyirMelody();
@@ -163,7 +165,6 @@ export default function MakamScreen() {
   // Play a single note from the makam scale under selected transposition
   const playScaleNote = async (index: number) => {
     const baseTonicFreq = getTonicFrequency(selectedMakam.id);
-    // Apply transposition offset in cents
     const tonicFreq = baseTonicFreq * Math.pow(2, selectedPreset.offsetCents / 1200);
     const commaShift = selectedMakam.scaleCommas[index];
     const targetFreq = tonicFreq * Math.pow(2, commaShift / 53);
@@ -192,7 +193,6 @@ export default function MakamScreen() {
         setCurrentPlayingNoteIndex(noteIndex);
         await playScaleNote(noteIndex);
         noteIndex++;
-        // Play next note after 750ms
         seyirTimerRef.current = setTimeout(playNext, 750);
       } else {
         setIsScalePlaying(false);
@@ -246,42 +246,73 @@ export default function MakamScreen() {
           <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>Klasik Türk Musikisi Dizi ve Seyirleri</Text>
         </View>
 
-        {/* Makam Horizontal Selector List */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.makamSelectorScroll}
-          contentContainerStyle={styles.makamSelectorContainer}
-        >
-          {makamData.map((makam: Makam) => {
-            const isSelected = selectedMakamId === makam.id;
-            return (
-              <TouchableOpacity
-                key={makam.id}
-                style={[
-                  styles.makamCard,
-                  { backgroundColor: colors.backgroundElement, borderColor: 'rgba(0,0,0,0.03)' },
-                  isSelected && { borderColor: colors.secondary, backgroundColor: 'rgba(115, 92, 0, 0.08)' }
-                ]}
-                onPress={() => {
-                  setSelectedMakamId(makam.id);
-                  setIsScalePlaying(false);
-                  stopSeyirMelody();
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={[
-                  styles.makamCardName,
-                  { color: colors.textSecondary },
-                  isSelected && { color: colors.secondary, fontFamily: Fonts.sansBold }
-                ]}>
-                  {makam.name}
+        {/* Collapsible Dropdown Selector Menu */}
+        <View style={styles.dropdownSection}>
+          <TouchableOpacity
+            style={[
+              styles.dropdownButton,
+              { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111, 70, 31, 0.15)' }
+            ]}
+            onPress={() => setIsMenuOpen(!isMenuOpen)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.dropdownLeft}>
+              <BookOpen size={18} color={colors.primary} style={styles.dropdownIcon} />
+              <Text style={[styles.dropdownLabel, { color: colors.textSecondary }]}>
+                Makam Seçin:{' '}
+                <Text style={[styles.dropdownSelectedValue, { color: colors.secondary, fontFamily: Fonts.serifBold }]}>
+                  {selectedMakam.name}
                 </Text>
-                <Text style={[styles.makamCardSub, { color: colors.textSecondary }]}>{makam.seyirType}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+              </Text>
+            </View>
+            {isMenuOpen ? (
+              <ChevronUp size={18} color={colors.secondary} />
+            ) : (
+              <ChevronDown size={18} color={colors.secondary} />
+            )}
+          </TouchableOpacity>
+
+          {isMenuOpen && (
+            <View style={[styles.verticalMenuList, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111, 70, 31, 0.15)' }]}>
+              <ScrollView
+                style={styles.menuScroll}
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+              >
+                {makamData.map((makam: Makam) => {
+                  const isSelected = selectedMakamId === makam.id;
+                  return (
+                    <TouchableOpacity
+                      key={makam.id}
+                      style={[
+                        styles.menuItem,
+                        { borderBottomColor: colors.background },
+                        isSelected && { backgroundColor: 'rgba(115, 92, 0, 0.08)' }
+                      ]}
+                      onPress={() => {
+                        setSelectedMakamId(makam.id);
+                        setIsMenuOpen(false);
+                        setIsScalePlaying(false);
+                        stopSeyirMelody();
+                      }}
+                    >
+                      <Text style={[
+                        styles.menuItemName,
+                        { color: colors.text },
+                        isSelected && { color: colors.secondary, fontFamily: Fonts.sansBold }
+                      ]}>
+                        {makam.name}
+                      </Text>
+                      <Text style={[styles.menuItemSub, { color: colors.textSecondary }]}>
+                        {makam.seyirType}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+        </View>
 
         {/* Selected Makam Detail Card */}
         <View style={[styles.detailContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
@@ -533,32 +564,68 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     fontFamily: Fonts.sans,
   },
-  makamSelectorScroll: {
+  dropdownSection: {
     marginBottom: 20,
-    marginHorizontal: -20,
+    position: 'relative',
+    zIndex: 999,
   },
-  makamSelectorContainer: {
-    paddingHorizontal: 20,
-    gap: 8,
-    height: 58,
-  },
-  makamCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 4,
-    borderWidth: 1,
+  dropdownButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 100,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 4,
+    borderWidth: 1.5,
   },
-  makamCardName: {
+  dropdownLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dropdownIcon: {
+    marginRight: 10,
+  },
+  dropdownLabel: {
     fontSize: 14,
     fontFamily: Fonts.sans,
   },
-  makamCardSub: {
-    fontSize: 9,
+  dropdownSelectedValue: {
+    fontSize: 14.5,
+  },
+  verticalMenuList: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    maxHeight: 240,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    zIndex: 9999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  menuScroll: {
+    padding: 4,
+  },
+  menuItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  menuItemName: {
+    fontSize: 14,
     fontFamily: Fonts.sans,
-    marginTop: 2,
+  },
+  menuItemSub: {
+    fontSize: 10,
+    fontFamily: Fonts.sans,
+    opacity: 0.7,
   },
   detailContainer: {
     borderRadius: 4,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, useColorScheme } from 'react-native';
 import Svg, { Line, Ellipse, Path, Text as SvgText, G } from 'react-native-svg';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 import { COMMA_SCALE } from '@/utils/tsmEngine';
 
 interface StaffNotationProps {
@@ -11,11 +11,6 @@ interface StaffNotationProps {
   activeIndex?: number | null;
 }
 
-// Map a perde name to a starting diatonic position on the treble staff (Rast Sol4 = 0)
-// G4 (Rast) is on the second line of the treble staff (index 0)
-// F4 is in the space below (index -1)
-// E4 is on the first line (index -2)
-// D4 (Yegah/Neva standard relative) is in the space below the first line (index -3)
 function getTonicDiatonicPosition(durakName: string): number {
   const name = durakName.toLowerCase();
   if (name.includes('rast') || name.includes('(sol')) return 0;
@@ -30,7 +25,6 @@ function getTonicDiatonicPosition(durakName: string): number {
   return 1; // Default to Dügâh (La4)
 }
 
-// Find base comma index in the absolute 53-comma scale for the tonic note
 function getTonicBaseComma(durakName: string): number {
   const name = durakName.toLowerCase();
   if (name.includes('rast')) return 0;
@@ -41,33 +35,33 @@ function getTonicBaseComma(durakName: string): number {
   if (name.includes('hüseynî') || name.includes('huseyni')) return 40;
   if (name.includes('acem')) return 44;
   if (name.includes('eviç') || name.includes('evic')) return 48;
-  if (name.includes('yegâh') || name.includes('yegah')) return 31 - 53; // Yegâh is 1 octave below Nevâ (31)
-  if (name.includes('irak')) return 48 - 53; // Irak is 1 octave below Eviç (48)
-  return 9; // Default to Dügâh (9)
+  if (name.includes('yegâh') || name.includes('yegah')) return 31 - 53;
+  if (name.includes('irak')) return 48 - 53;
+  return 9;
 }
 
-// Render paths for traditional Turkish Classical Music accidentals
-// Coordinates are centered around (0, 0)
+// Precise SVG vector path definitions for Arel-Ezgi-Uzdilek accidentals
+// Centered around (0, 0)
 const AccidentalPaths: Record<string, string> = {
-  // Koma Flat (1 comma flat): flat symbol with a small slash leaning down-left
-  'koma-flat': 'M 0 5 L 0 -15 M 0 -3 C 2.5 -3, 4 0, 4 2.5 C 4 5, 2.5 7, 0 5 M -3.5 -9 L 2.5 -5',
+  // Koma Flat (1k): flat loop + a backward diagonal line through the upper stem
+  'koma-flat': 'M 0 5 L 0 -13 M 0 -2 C 2.2 -2, 3.8 0.5, 3.8 2.5 C 3.8 4.5, 2.2 6.5, 0 5 M -3.5 -8 L 3.5 -5',
   
-  // Bakiye Flat (4 commas flat): flat with a backward slash leaning down-right
-  'bakiye-flat': 'M 0 5 L 0 -15 M 0 -3 C 2.5 -3, 4 0, 4 2.5 C 4 5, 2.5 7, 0 5 M -2.5 -5 L 3.5 -9',
+  // Bakiye Flat (4k): flat loop + a forward diagonal slash through the loop
+  'bakiye-flat': 'M 0 5 L 0 -13 M 0 -2 C 2.2 -2, 3.8 0.5, 3.8 2.5 C 3.8 4.5, 2.2 6.5, 0 5 M -2.5 -4 L 3.5 -7',
   
-  // Küçük Mücennep Flat (5 commas flat): standard flat symbol
-  'kucuk-flat': 'M 0 5 L 0 -15 M 0 -3 C 2.5 -3, 4 0, 4 2.5 C 4 5, 2.5 7, 0 5',
-  'flat': 'M 0 5 L 0 -15 M 0 -3 C 2.5 -3, 4 0, 4 2.5 C 4 5, 2.5 7, 0 5',
+  // Küçük Mücennep Flat (5k): standard flat symbol
+  'kucuk-flat': 'M 0 5 L 0 -13 M 0 -2 C 2.2 -2, 3.8 0.5, 3.8 2.5 C 3.8 4.5, 2.2 6.5, 0 5',
+  'flat': 'M 0 5 L 0 -13 M 0 -2 C 2.2 -2, 3.8 0.5, 3.8 2.5 C 3.8 4.5, 2.2 6.5, 0 5',
   
-  // Koma Sharp (1 comma sharp): sharp with only one vertical stem and two crossbars
-  'koma-sharp': 'M 0 -10 L 0 10 M -4 -4 L 4 -2 M -4 2 L 4 4',
+  // Koma Sharp (1k): sharp with one vertical line and two diagonal crossbars
+  'koma-sharp': 'M 0 -9 L 0 9 M -4 -3 L 4 -1 M -4 2 L 4 4',
   
-  // Bakiye Sharp (4 commas sharp): standard sharp with one tilted crossbar or custom cross
-  'bakiye-sharp': 'M -2 -10 L -2 10 M 2 -10 L 2 10 M -5 -3 L 5 1',
+  // Bakiye Sharp (4k): standard sharp with one tilted crossbar
+  'bakiye-sharp': 'M -2 -9 L -2 9 M 2 -9 L 2 9 M -5 -3 L 5 0 M -5 1 L 5 4',
   
-  // Küçük Mücennep Sharp (5 commas sharp): standard sharp
-  'kucuk-sharp': 'M -2 -10 L -2 10 M 2 -10 L 2 10 M -5 -3 L 5 -1 M -5 2 L 5 4',
-  'sharp': 'M -2 -10 L -2 10 M 2 -10 L 2 10 M -5 -3 L 5 -1 M -5 2 L 5 4',
+  // Küçük Mücennep Sharp (5k): standard sharp (two verticals, two horizontals)
+  'kucuk-sharp': 'M -2 -9 L -2 9 M 2 -9 L 2 9 M -5 -3 L 5 -1 M -5 2 L 5 4',
+  'sharp': 'M -2 -9 L -2 9 M 2 -9 L 2 9 M -5 -3 L 5 -1 M -5 2 L 5 4',
 };
 
 export const StaffNotation: React.FC<StaffNotationProps> = ({
@@ -82,23 +76,19 @@ export const StaffNotation: React.FC<StaffNotationProps> = ({
   const startDiatonicPos = getTonicDiatonicPosition(durak);
   const baseComma = getTonicBaseComma(durak);
 
-  // SVG height is 140. Staff lines are spaced by 10px.
-  // Center line (Line 3 / B4 / pos = 2) is at y = 70.
-  // Y-coordinate formula: y = 70 - (diatonicPos - 2) * 5
   const getNoteY = (pos: number) => {
     return 70 - (pos - 2) * 5;
   };
 
-  // Staff lines y-positions
   const staffLines = [50, 60, 70, 80, 90]; // Line 5 (F5) to Line 1 (E4)
 
   const numNotes = scaleNotes.length;
-  const startX = 85; // Leave room for the clef
-  const endX = 350;
+  const startX = 88; // Leave room for clef and accidental
+  const endX = 352;
   const stepX = numNotes > 1 ? (endX - startX) / (numNotes - 1) : 40;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundElement }]}>
+    <View style={[styles.container, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111, 70, 31, 0.12)' }]}>
       <Svg width="100%" height={140} viewBox="0 0 380 140" style={styles.svg}>
         {/* Draw 5 Staff Lines */}
         {staffLines.map((y, idx) => (
@@ -108,21 +98,20 @@ export const StaffNotation: React.FC<StaffNotationProps> = ({
             y1={y}
             x2={365}
             y2={y}
-            stroke={colors.textSecondary}
+            stroke={colors.text}
             strokeWidth={1}
-            opacity={0.4}
+            opacity={0.25}
           />
         ))}
 
         {/* Draw G-Clef (Treble Clef) */}
-        {/* We place it such that its loop wraps around the G4 line (y = 80) */}
         <SvgText
           x={18}
           y={93}
           fontSize={72}
           fontFamily="serif"
           fill={colors.primary}
-          opacity={0.9}
+          opacity={0.85}
         >
           𝄞
         </SvgText>
@@ -136,29 +125,25 @@ export const StaffNotation: React.FC<StaffNotationProps> = ({
 
           // Calculate absolute comma to determine accidental
           const relativeComma = scaleCommas[idx] || 0;
-          const absComma = (baseComma + relativeComma + 106) % 53; // ensure positive modulo
+          const absComma = (baseComma + relativeComma + 106) % 53;
           
-          // Check if there is an accidental
           const commaDef = COMMA_SCALE.find((c) => c.commaIndex === absComma);
           const accidental = commaDef ? commaDef.accidental : 'none';
 
           // Determine ledger lines
           const ledgerLines: number[] = [];
           
-          // E4 is at y = 90. If y >= 100, draw ledger lines below.
           if (y >= 100) {
             for (let ly = 100; ly <= y; ly += 10) {
               ledgerLines.push(ly);
             }
           }
-          // F5 is at y = 50. If y <= 40, draw ledger lines above.
           if (y <= 40) {
             for (let ly = 40; ly >= y; ly -= 10) {
               ledgerLines.push(ly);
             }
           }
 
-          // Clean note label (strip parenthetical details for clean notation)
           const cleanName = noteName.split(' ')[0];
 
           return (
@@ -176,11 +161,11 @@ export const StaffNotation: React.FC<StaffNotationProps> = ({
                 />
               ))}
 
-              {/* Accidental */}
+              {/* Accidental positioned at x - 18 for breathing room */}
               {accidental && accidental !== 'none' && AccidentalPaths[accidental] && (
                 <Path
                   d={AccidentalPaths[accidental]}
-                  transform={`translate(${x - 16}, ${y}) scale(1)`}
+                  transform={`translate(${x - 18}, ${y}) scale(1.05)`}
                   fill="none"
                   stroke={isActive ? colors.secondary : colors.text}
                   strokeWidth={1.8}
@@ -188,7 +173,6 @@ export const StaffNotation: React.FC<StaffNotationProps> = ({
               )}
 
               {/* Note Stem */}
-              {/* Draw stem going up if note is low, down if note is high */}
               <Line
                 x1={diatonicPos >= 2 ? x - 6.5 : x + 6.5}
                 y1={y}
@@ -247,7 +231,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginVertical: 12,
     borderWidth: 1,
-    borderColor: 'rgba(111, 70, 31, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
