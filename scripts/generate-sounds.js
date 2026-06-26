@@ -143,4 +143,70 @@ Object.entries(baseNotes).forEach(([name, freq]) => {
   fs.writeFileSync(filepath, buffer);
 });
 
+// Helper for normalization
+function normalize(samples) {
+  let peak = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const abs = Math.abs(samples[i]);
+    if (abs > peak) peak = abs;
+  }
+  if (peak > 0) {
+    const norm = 0.95 / peak;
+    for (let i = 0; i < samples.length; i++) {
+      samples[i] *= norm;
+    }
+  }
+  return samples;
+}
+
+// Synthesizes a deep "Düm" percussion sound (bass drum pitch slide + decay)
+function generateDum() {
+  const totalSamples = SAMPLE_RATE * 1.0;
+  const samples = new Float32Array(totalSamples);
+  
+  for (let i = 0; i < totalSamples; i++) {
+    const t = i / SAMPLE_RATE;
+    const freq = 60 + 25 * Math.exp(-t * 20);
+    const phase = 2 * Math.PI * freq * t;
+    let val = Math.sin(phase);
+    
+    const noise = Math.max(0, 0.4 * (1.0 - t * 50));
+    val += (Math.random() * 2.0 - 1.0) * noise;
+    
+    const amp = Math.exp(-t * 5.0);
+    samples[i] = val * amp;
+  }
+  return normalize(samples);
+}
+
+// Synthesizes a crisp "Tek" percussion sound (wood block / high-pitch strike)
+function generateTek() {
+  const totalSamples = SAMPLE_RATE * 0.4;
+  const samples = new Float32Array(totalSamples);
+  
+  for (let i = 0; i < totalSamples; i++) {
+    const t = i / SAMPLE_RATE;
+    const freq = 650;
+    const phase = 2 * Math.PI * freq * t;
+    let val = Math.sin(phase);
+    
+    const noise = Math.max(0, 0.7 * (1.0 - t * 80));
+    val += (Math.random() * 2.0 - 1.0) * noise;
+    
+    const amp = Math.exp(-t * 25.0);
+    samples[i] = val * amp;
+  }
+  return normalize(samples);
+}
+
+console.log('Generating metronome sound assets...');
+
+console.log('Synthesizing DÜM (dum.wav)...');
+const dumSamples = generateDum();
+fs.writeFileSync(path.join(soundsDir, 'dum.wav'), createWavBuffer(dumSamples));
+
+console.log('Synthesizing TEK (tek.wav)...');
+const tekSamples = generateTek();
+fs.writeFileSync(path.join(soundsDir, 'tek.wav'), createWavBuffer(tekSamples));
+
 console.log('Sound assets successfully generated in assets/sounds/');

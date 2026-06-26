@@ -12,6 +12,10 @@ interface AppState {
   isListening: boolean;
   hasMicPermission: boolean;
   
+  // Koma Tuner Mode extensions
+  tunerMode: 'standard' | 'koma';
+  selectedPerdeIndex: number; // Index in COMMA_SCALE (0 to 53)
+  
   // Makam Guide State
   selectedMakamId: string;
   isScalePlaying: boolean;
@@ -23,6 +27,8 @@ interface AppState {
   setActivePegIndex: (index: number | null) => void;
   setIsListening: (listening: boolean) => void;
   setHasMicPermission: (granted: boolean) => void;
+  setTunerMode: (mode: 'standard' | 'koma') => void;
+  setSelectedPerdeIndex: (index: number) => void;
   setSelectedMakamId: (id: string) => void;
   setIsScalePlaying: (playing: boolean) => void;
   setCurrentPlayingNoteIndex: (index: number | null) => void;
@@ -38,6 +44,8 @@ export const useAppStore = create<AppState>((set) => ({
   activePegIndex: null,
   isListening: false,
   hasMicPermission: false,
+  tunerMode: 'standard',
+  selectedPerdeIndex: 9, // Dügâh (index 9)
 
   // Makam Default State
   selectedMakamId: 'rast',
@@ -58,6 +66,8 @@ export const useAppStore = create<AppState>((set) => ({
   setActivePegIndex: (index) => set({ activePegIndex: index }),
   setIsListening: (listening) => set({ isListening: listening }),
   setHasMicPermission: (granted) => set({ hasMicPermission: granted }),
+  setTunerMode: (mode) => set({ tunerMode: mode, detectedFrequency: 0, closestNote: null, centsDeviation: 0, komaDeviation: 0 }),
+  setSelectedPerdeIndex: (index) => set({ selectedPerdeIndex: index, detectedFrequency: 0, closestNote: null, centsDeviation: 0, komaDeviation: 0 }),
   setSelectedMakamId: (id) => set({ selectedMakamId: id }),
   setIsScalePlaying: (playing) => set({ isScalePlaying: playing }),
   setCurrentPlayingNoteIndex: (index) => set({ currentPlayingNoteIndex: index })

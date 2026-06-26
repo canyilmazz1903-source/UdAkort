@@ -1,6 +1,6 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
-
+import { Mic, Library, Timer } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
@@ -15,16 +15,21 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Akort</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
+          src={<Mic size={20} color={colors.text} />}
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="explore">
         <NativeTabs.Trigger.Label>Makamlar</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
+          src={<Library size={20} color={colors.text} />}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="metronome">
+        <NativeTabs.Trigger.Label>Metronom</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={<Timer size={20} color={colors.text} />}
         />
       </NativeTabs.Trigger>
     </NativeTabs>

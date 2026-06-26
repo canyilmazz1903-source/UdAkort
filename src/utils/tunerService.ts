@@ -1,7 +1,7 @@
 import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import { Platform } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
-import { getClosestTuningNote } from './tsmEngine';
+import { getClosestTuningNote, COMMA_SCALE, komasToHz, hzToCents, hzToKomas } from './tsmEngine';
 
 let PitchDetection: any = null;
 
@@ -67,11 +67,10 @@ export async function startTuning() {
   // Check if native module is available
   if (PitchDetection && PitchDetection.startListening && Platform.OS !== 'web') {
     try {
-      // Configure options (standard for pitch detection)
       if (PitchDetection.setOptions) {
         PitchDetection.setOptions({
           bufferSize: 4096,
-          minVolume: -30.0,
+          minVolume: -48.0,
           updateIntervalMs: 150,
         });
       }
@@ -81,15 +80,25 @@ export async function startTuning() {
       subscription = PitchDetection.addListener((event: { frequency: number }) => {
         const freq = event.frequency;
         if (freq > 40 && freq < 1000) { // Limit to Ud frequency range
-          const preset = useAppStore.getState().currentPreset;
-          const { note, centsDeviation, komaDeviation } = getClosestTuningNote(freq, preset);
-          
-          useAppStore.getState().setDetectedFrequency(
-            freq,
-            note,
-            centsDeviation,
-            komaDeviation
-          );
+          const state = useAppStore.getState();
+          const preset = state.currentPreset;
+
+          if (state.tunerMode === 'koma') {
+            const selectedPerde = COMMA_SCALE[state.selectedPerdeIndex];
+            const targetFreq = komasToHz(selectedPerde.commaIndex - 9, preset.notes[2].frequency);
+            const centsDeviation = hzToCents(freq, targetFreq);
+            const komaDeviation = hzToKomas(freq, targetFreq);
+
+            state.setDetectedFrequency(
+              freq,
+              { name: selectedPerde.name, westernNote: selectedPerde.westernName, frequency: targetFreq },
+              centsDeviation,
+              komaDeviation
+            );
+          } else {
+            const { note, centsDeviation, komaDeviation } = getClosestTuningNote(freq, preset);
+            state.setDetectedFrequency(freq, note, centsDeviation, komaDeviation);
+          }
         }
       });
       return;
@@ -129,7 +138,7 @@ export async function stopTuning() {
   }
 }
 
-// Simulates real-time microphone input for testing in Expo Go
+// Simulates real-time microphone input for testing in Expo Go / Web
 function startSimulatorTuning() {
   if (simulationInterval) clearInterval(simulationInterval);
 
@@ -138,27 +147,43 @@ function startSimulatorTuning() {
     const store = useAppStore.getState();
     if (!store.isListening) return;
 
-    // Get active peg or default to Dügah (A3 = 220Hz)
     const preset = store.currentPreset;
-    const targetNote = store.activePegIndex !== null 
-      ? preset.notes[store.activePegIndex] 
-      : preset.notes[2]; // Default to 3rd string (Dügah)
-    
-    const targetFreq = targetNote.frequency;
+    let targetFreq = 0;
+    let targetNoteName = '';
+    let targetWesternNote = '';
+
+    if (store.tunerMode === 'koma') {
+      const selectedPerde = COMMA_SCALE[store.selectedPerdeIndex];
+      targetFreq = komasToHz(selectedPerde.commaIndex - 9, preset.notes[2].frequency);
+      targetNoteName = selectedPerde.name;
+      targetWesternNote = selectedPerde.westernName;
+    } else {
+      const targetNote = store.activePegIndex !== null 
+        ? preset.notes[store.activePegIndex] 
+        : preset.notes[2]; // Default to 3rd string (Dügah)
+      targetFreq = targetNote.frequency;
+      targetNoteName = targetNote.name;
+      targetWesternNote = targetNote.westernNote;
+    }
 
     // Simulate minor pitch fluctuations around the target frequency
-    // Creates a nice wavy gauge behavior that settles near the target
     const noise = Math.sin(angle) * 1.5 + Math.cos(angle * 2.5) * 0.5;
     const simulatedFreq = targetFreq + noise;
     angle += 0.15;
 
-    const { note, centsDeviation, komaDeviation } = getClosestTuningNote(simulatedFreq, preset);
+    if (store.tunerMode === 'koma') {
+      const centsDeviation = hzToCents(simulatedFreq, targetFreq);
+      const komaDeviation = hzToKomas(simulatedFreq, targetFreq);
 
-    store.setDetectedFrequency(
-      simulatedFreq,
-      note,
-      centsDeviation,
-      komaDeviation
-    );
+      store.setDetectedFrequency(
+        simulatedFreq,
+        { name: targetNoteName, westernNote: targetWesternNote, frequency: targetFreq },
+        centsDeviation,
+        komaDeviation
+      );
+    } else {
+      const { note, centsDeviation, komaDeviation } = getClosestTuningNote(simulatedFreq, preset);
+      store.setDetectedFrequency(simulatedFreq, note, centsDeviation, komaDeviation);
+    }
   }, 150);
 }

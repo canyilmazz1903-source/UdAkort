@@ -1,13 +1,59 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAreaView, useColorScheme } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useAppStore } from '../store/useAppStore';
-import { TUNING_PRESETS } from '../utils/tsmEngine';
+import { TUNING_PRESETS, COMMA_SCALE } from '../utils/tsmEngine';
 import { startTuning, stopTuning, checkMicrophonePermission } from '../utils/tunerService';
 import { DeviationGauge } from '../components/DeviationGauge';
 import { Pegboard } from '../components/Pegboard';
-import { Info } from 'lucide-react-native';
+import { Info, Sliders, Music, Radio } from 'lucide-react-native';
+import { Colors, Fonts } from '@/constants/theme';
+import { playUdPluck } from '../utils/audioPlayer';
+
+const SeljukPattern = ({ strokeColor }: { strokeColor: string }) => (
+  <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" style={styles.seljukSvg} opacity={0.035}>
+      {/* Central Seljuk Medallion (8-pointed star & nested geometries) */}
+      <Path
+        d="M 50 10 L 62 38 L 90 50 L 62 62 L 50 90 L 38 62 L 10 50 L 38 38 Z"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={1}
+      />
+      <Path
+        d="M 50 20 L 59 41 L 80 50 L 59 59 L 50 80 L 41 59 L 20 50 L 41 41 Z"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={0.8}
+      />
+      <Path
+        d="M 50 30 L 56 44 L 70 50 L 56 56 L 50 70 L 44 56 L 30 50 L 44 44 Z"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={0.6}
+      />
+      {/* Cross intersecting lines */}
+      <Path
+        d="M 50 0 L 50 100 M 0 50 L 100 50 M 15 15 L 85 85 M 15 85 L 85 15"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={0.3}
+      />
+      {/* Outer border details */}
+      <Path
+        d="M 5 5 L 95 5 L 95 95 L 5 95 Z M 8 8 L 92 8 L 92 92 L 8 92 Z"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={0.5}
+      />
+    </Svg>
+  </View>
+);
 
 export default function HomeScreen() {
+  const scheme = useColorScheme();
+  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+
   const {
     currentPreset,
     detectedFrequency,
@@ -16,7 +62,11 @@ export default function HomeScreen() {
     komaDeviation,
     isListening,
     hasMicPermission,
-    setPreset
+    tunerMode,
+    selectedPerdeIndex,
+    setPreset,
+    setTunerMode,
+    setSelectedPerdeIndex,
   } = useAppStore();
 
   useEffect(() => {
@@ -30,64 +80,185 @@ export default function HomeScreen() {
     return () => {
       stopTuning();
     };
-  }, []);
+  }, [tunerMode, selectedPerdeIndex]); // Restart tuning when mode changes
+
+  const activePerde = COMMA_SCALE[selectedPerdeIndex];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      {/* Seljuk geometric background */}
+      <SeljukPattern strokeColor={colors.primary} />
+
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>UdAkort <Text style={styles.versionText}>2.0</Text></Text>
-          <Text style={styles.appSubtitle}>Türk Musikisi Akort Sistemi (AEÜ)</Text>
+          <Text style={[styles.appTitle, { color: colors.primary, fontFamily: Fonts.serifBold }]}>
+            UdAkort <Text style={[styles.versionText, { color: colors.secondary }]}>2.1</Text>
+          </Text>
+          <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
+            Türk Musikisi Akort Sistemi (AEÜ)
+          </Text>
         </View>
 
-        {/* Ahenk / Düzen Seçici (Segmented Control) */}
-        <View style={styles.selectorContainer}>
-          <Text style={styles.selectorLabel}>AHENK DÜZENİ</Text>
-          <View style={styles.segmentedControl}>
-            {TUNING_PRESETS.map((preset) => {
-              const isSelected = currentPreset.id === preset.id;
-              return (
-                <TouchableOpacity
-                  key={preset.id}
-                  style={[
-                    styles.segmentButton,
-                    isSelected && styles.segmentButtonActive
-                  ]}
-                  onPress={() => setPreset(preset.id)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[
-                    styles.segmentText,
-                    isSelected && styles.segmentTextActive
-                  ]}>
-                    {preset.name.split(' ')[0]}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <Text style={styles.presetDescription}>{currentPreset.description}</Text>
+        {/* Mode Segmented Control: Standart vs Koma */}
+        <View style={[styles.modeSelectorContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              tunerMode === 'standard' && [styles.modeButtonActive, { backgroundColor: colors.background, borderColor: 'rgba(0,0,0,0.03)' }]
+            ]}
+            onPress={() => setTunerMode('standard')}
+          >
+            <Radio size={16} color={tunerMode === 'standard' ? colors.secondary : colors.textSecondary} style={styles.modeIcon} />
+            <Text style={[
+              styles.modeButtonText,
+              { color: colors.textSecondary },
+              tunerMode === 'standard' && { color: colors.secondary, fontFamily: Fonts.sansBold }
+            ]}>
+              Standart Akort
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              tunerMode === 'koma' && [styles.modeButtonActive, { backgroundColor: colors.background, borderColor: 'rgba(0,0,0,0.03)' }]
+            ]}
+            onPress={() => setTunerMode('koma')}
+          >
+            <Sliders size={16} color={tunerMode === 'koma' ? colors.secondary : colors.textSecondary} style={styles.modeIcon} />
+            <Text style={[
+              styles.modeButtonText,
+              { color: colors.textSecondary },
+              tunerMode === 'koma' && { color: colors.secondary, fontFamily: Fonts.sansBold }
+            ]}>
+              Koma Akort (AEÜ)
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Dynamic Ahenk Selector (only for Standard Mode) */}
+        {tunerMode === 'standard' && (
+          <View style={[styles.selectorContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+            <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>AHENK DÜZENİ</Text>
+            <View style={styles.segmentedControl}>
+              {TUNING_PRESETS.map((preset) => {
+                const isSelected = currentPreset.id === preset.id;
+                return (
+                  <TouchableOpacity
+                    key={preset.id}
+                    style={[
+                      styles.segmentButton,
+                      isSelected && [styles.segmentButtonActive, { backgroundColor: colors.background, borderColor: 'rgba(0,0,0,0.02)' }]
+                    ]}
+                    onPress={() => setPreset(preset.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[
+                      styles.segmentText,
+                      { color: colors.textSecondary },
+                      isSelected && { color: colors.secondary, fontFamily: Fonts.sansBold }
+                    ]}>
+                      {preset.name.split(' ')[0]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={[styles.presetDescription, { color: colors.textSecondary }]}>{currentPreset.description}</Text>
+          </View>
+        )}
+
+        {/* Microtonal Perde Picker (only for Koma Mode) */}
+        {tunerMode === 'koma' && (
+          <View style={[styles.selectorContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+            <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>HEDEF KOMA PERDESİ SEÇİN</Text>
+            
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.perdePickerScroll}
+              contentContainerStyle={styles.perdePickerContainer}
+            >
+              {COMMA_SCALE.map((perde, index) => {
+                const isSelected = selectedPerdeIndex === index;
+                const isNamed = perde.name !== `${perde.westernName} (${perde.commaIndex}k)` && perde.name.length > 0;
+                
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.perdeCard,
+                      { backgroundColor: colors.background, borderColor: 'rgba(0,0,0,0.03)' },
+                      isSelected && { borderColor: colors.secondary, backgroundColor: 'rgba(115, 92, 0, 0.08)' }
+                    ]}
+                    onPress={() => setSelectedPerdeIndex(index)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[
+                      styles.perdeCardName,
+                      { color: colors.text },
+                      isSelected && { color: colors.secondary, fontFamily: Fonts.sansBold }
+                    ]}>
+                      {perde.name}
+                    </Text>
+                    <Text style={[styles.perdeCardSub, { color: colors.textSecondary }]}>
+                      {perde.westernName} | {perde.commaIndex}k
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <Text style={[styles.presetDescription, { color: colors.textSecondary }]}>
+              {activePerde.name} perdesine akort ediliyor. Dügâh (La) referansına göre {activePerde.commaIndex} koma kaydırılmıştır.
+            </Text>
+          </View>
+        )}
 
         {/* Real-time Tuner Gauge */}
         <DeviationGauge
           frequency={detectedFrequency}
-          noteName={closestNote ? closestNote.name : ''}
-          westernNote={closestNote ? closestNote.westernNote : ''}
+          noteName={tunerMode === 'koma' ? activePerde.name : (closestNote ? closestNote.name : '')}
+          westernNote={tunerMode === 'koma' ? activePerde.westernName : (closestNote ? closestNote.westernNote : '')}
           centsDeviation={centsDeviation}
           komaDeviation={komaDeviation}
           isListening={isListening}
         />
 
-        {/* Pegboard & String Interaction */}
-        <Pegboard notes={currentPreset.notes} />
+        {/* Pegboard (Standard Mode) or Reference Player (Koma Mode) */}
+        {tunerMode === 'standard' ? (
+          <Pegboard notes={currentPreset.notes} />
+        ) : (
+          <View style={[styles.komaHelperContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+            <View style={styles.komaHelperHeader}>
+              <Music size={18} color={colors.primary} />
+              <Text style={[styles.komaHelperTitle, { color: colors.text, fontFamily: Fonts.serifBold }]}>Referans Tonu Çal</Text>
+            </View>
+            <Text style={[styles.komaHelperDesc, { color: colors.textSecondary }]}>
+              Seçili perdenin tam frekans referans sesini dinlemek için aşağıdaki butona basın.
+            </Text>
+            <TouchableOpacity
+              style={[styles.playReferenceButton, { backgroundColor: colors.primary }]}
+              onPress={async () => {
+                // Calculate target frequency for reference play
+                const targetFreq = currentPreset.notes[2].frequency * Math.pow(2, (activePerde.commaIndex - 9) / 53);
+                // Use audio synthesis player rate
+                const baseNoteFreq = 164.81; // Dügâh standard E3
+                const rate = targetFreq / baseNoteFreq;
+                await playUdPluck('e3', rate);
+              }}
+            >
+              <Music size={16} color="#fff" style={styles.playRefIcon} />
+              <Text style={styles.playRefText}>Referans Ses Çal</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Simulator mode info badge */}
         {!hasMicPermission && isListening && (
-          <View style={styles.infoCard}>
-            <Info size={16} color="#888" style={styles.infoIcon} />
-            <Text style={styles.infoText}>
+          <View style={[styles.infoCard, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+            <Info size={16} color={colors.textSecondary} style={styles.infoIcon} />
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Mikrofon erişimi olmadığından demo simülatör modu çalışıyor. Telleri tınlatarak ibreyi görebilirsiniz.
             </Text>
           </View>
@@ -100,125 +271,176 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0a0a0a', // Solid rich black
+  },
+  seljukSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 25 : 10,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'ios' ? 100 : 120,
     alignItems: 'stretch',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   appTitle: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#fff',
     letterSpacing: 0.5,
   },
   versionText: {
     fontSize: 14,
-    color: '#808000', // Olive Green accent
     fontWeight: 'normal',
   },
   appSubtitle: {
     fontSize: 12,
-    color: '#666',
     marginTop: 4,
     letterSpacing: 0.5,
+    fontFamily: Fonts.sans,
+  },
+  modeSelectorContainer: {
+    flexDirection: 'row',
+    borderRadius: 4,
+    borderWidth: 1,
+    padding: 3,
+    marginBottom: 15,
+  },
+  modeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  modeButtonActive: {
+    borderWidth: 1,
+  },
+  modeIcon: {
+    marginRight: 6,
+  },
+  modeButtonText: {
+    fontSize: 13,
+    fontFamily: Fonts.sans,
   },
   selectorContainer: {
-    backgroundColor: '#111',
-    borderRadius: 14,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#1d1d1d',
     padding: 12,
     alignItems: 'center',
     marginBottom: 15,
   },
   selectorLabel: {
     fontSize: 10,
-    color: '#555',
-    fontWeight: 'bold',
-    letterSpacing: 2,
+    fontFamily: Fonts.sansBold,
+    letterSpacing: 1.5,
     marginBottom: 8,
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: '#0a0a0a',
-    borderRadius: 8,
+    borderRadius: 4,
     padding: 2,
     width: '100%',
-    borderWidth: 1,
-    borderColor: '#1a1a1a',
+    backgroundColor: 'rgba(0,0,0,0.03)',
   },
   segmentButton: {
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   segmentButtonActive: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 0.5,
-    borderColor: '#2e2e2e',
+    borderWidth: 1,
   },
   segmentText: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  segmentTextActive: {
-    color: '#D4AF37', // Gold active
+    fontFamily: Fonts.sans,
   },
   presetDescription: {
     fontSize: 10,
-    color: '#555',
+    fontFamily: Fonts.sans,
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 10,
   },
-  micButton: {
+  perdePickerScroll: {
+    width: '100%',
+    marginBottom: 8,
+  },
+  perdePickerContainer: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  perdeCard: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+  },
+  perdeCardName: {
+    fontSize: 13,
+    fontFamily: Fonts.sans,
+  },
+  perdeCardSub: {
+    fontSize: 9,
+    fontFamily: Fonts.mono,
+    marginTop: 2,
+  },
+  komaHelperContainer: {
+    borderRadius: 4,
+    borderWidth: 1,
+    padding: 16,
+    marginTop: 10,
+  },
+  komaHelperHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  komaHelperTitle: {
+    fontSize: 15,
+  },
+  komaHelperDesc: {
+    fontSize: 12,
+    fontFamily: Fonts.sans,
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+  playReferenceButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
-    borderRadius: 24,
-    marginVertical: 15,
-    borderWidth: 1.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 3,
-    elevation: 3,
+    paddingVertical: 12,
+    borderRadius: 4,
+    width: '100%',
   },
-  micButtonActive: {
-    backgroundColor: '#B22222', // Red stop button
-    borderColor: '#8b0000',
+  playRefIcon: {
+    marginRight: 6,
   },
-  micButtonInactive: {
-    backgroundColor: '#111', // Dark button with gold border
-    borderColor: '#808000', // Olive Green
-  },
-  micButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  playRefText: {
     color: '#fff',
-    letterSpacing: 0.5,
-  },
-  btnIcon: {
-    marginRight: 8,
+    fontSize: 14,
+    fontFamily: Fonts.sansBold,
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#111',
-    borderRadius: 10,
+    borderRadius: 4,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
     marginTop: 10,
   },
   infoIcon: {
@@ -228,7 +450,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 10,
-    color: '#666',
+    fontFamily: Fonts.sans,
     lineHeight: 14,
   },
 });

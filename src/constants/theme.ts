@@ -9,47 +9,36 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#1b1c1c', // Abanoz
+    background: '#fcf9f8', // Sedef Cream
+    backgroundElement: '#efebe9', // Light warm gray
+    backgroundSelected: '#d7ccc8', // Warm brown select
+    textSecondary: '#6d4c41', // Ceviz Secondary
+    primary: '#6f461f', // Ceviz Brown
+    secondary: '#735c00', // Altın Gold
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#fcf9f8', // Sedef Cream
+    background: '#14110f', // Very dark Walnut Brown
+    backgroundElement: '#2a221d', // Dark Ceviz Element
+    backgroundSelected: '#42342c', // Dark select
+    textSecondary: '#a1887f', // Muted warm brown
+    primary: '#8b5e34', // Lighter Ceviz Brown
+    secondary: '#fed65b', // Bright Altın Gold
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export const Fonts = {
+  sans: 'HankenGrotesk_400Regular',
+  sansSemiBold: 'HankenGrotesk_600SemiBold',
+  sansBold: 'HankenGrotesk_700Bold',
+  serif: 'LibreCaslonText_400Regular',
+  serifBold: 'LibreCaslonText_700Bold',
+  mono: 'JetBrainsMono_400Regular',
+  monoBold: 'JetBrainsMono_700Bold',
+};
 
 export const Spacing = {
   half: 2,

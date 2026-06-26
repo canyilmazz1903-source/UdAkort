@@ -8,7 +8,9 @@ const soundAssets: Record<string, any> = {
   'e3': require('../../assets/sounds/e3.wav'),
   'a3': require('../../assets/sounds/a3.wav'),
   'd4': require('../../assets/sounds/d4.wav'),
-  'g4': require('../../assets/sounds/g4.wav')
+  'g4': require('../../assets/sounds/g4.wav'),
+  'dum': require('../../assets/sounds/dum.wav'),
+  'tek': require('../../assets/sounds/tek.wav')
 };
 
 let playerInstance: ReturnType<typeof createAudioPlayer> | null = null;
@@ -23,6 +25,26 @@ export async function configureAudioForPlayback() {
     });
   } catch (e) {
     console.warn('Failed to configure audio mode', e);
+  }
+}
+
+export async function playMetronomeClick(type: 'dum' | 'tek') {
+  try {
+    await configureAudioForPlayback();
+
+    const asset = soundAssets[type];
+    if (!asset) {
+      console.warn(`Sound asset not found for metronome: ${type}`);
+      return;
+    }
+
+    // Use a fresh player instance for metronome clicks to avoid overlay queue lagging
+    const player = createAudioPlayer(asset);
+    player.shouldCorrectPitch = false;
+    player.volume = 1.0;
+    player.play();
+  } catch (error) {
+    console.error('Error playing metronome click:', error);
   }
 }
 

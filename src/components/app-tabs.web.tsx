@@ -27,6 +27,9 @@ export default function AppTabs() {
           <TabTrigger name="explore" href="/explore" asChild>
             <TabButton>Makamlar</TabButton>
           </TabTrigger>
+          <TabTrigger name="metronome" href="/metronome" asChild>
+            <TabButton>Metronom</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>
