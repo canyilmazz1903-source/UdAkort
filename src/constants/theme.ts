@@ -9,13 +9,13 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#1b1c1c', // Abanoz
-    background: '#fcf9f8', // Sedef Cream
-    backgroundElement: '#efebe9', // Light warm gray
-    backgroundSelected: '#d7ccc8', // Warm brown select
-    textSecondary: '#6d4c41', // Ceviz Secondary
-    primary: '#6f461f', // Ceviz Brown
-    secondary: '#735c00', // Altın Gold
+    text: '#2C1E15', // Deep Abanoz/Walnut Brown
+    background: '#FAF6F0', // Soft warm cream
+    backgroundElement: '#F2EAE1', // Lighter warm cream for cards
+    backgroundSelected: '#E5D7C6', // Selected background indicator
+    textSecondary: '#5E4738', // Medium warm brown for subtitles
+    primary: '#7D4F2A', // Ceviz Brown
+    secondary: '#A07817', // Altın Gold
   },
   dark: {
     text: '#fcf9f8', // Sedef Cream

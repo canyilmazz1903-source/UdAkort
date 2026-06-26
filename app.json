@@ -6,12 +6,12 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "udakort",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.udakort.app",
       "appleTeamId": "84P45WA3X4",
-      "buildNumber": "20",
+      "buildNumber": "21",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.udakort.app",
-      "versionCode": 20,
+      "versionCode": 21,
       "permissions": [
         "RECORD_AUDIO"
       ],

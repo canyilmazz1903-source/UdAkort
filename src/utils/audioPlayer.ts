@@ -16,11 +16,11 @@ const soundAssets: Record<string, any> = {
 let playerInstance: ReturnType<typeof createAudioPlayer> | null = null;
 
 // Configures Audio Category for Playback (ensures sound plays even in Silent Mode on iOS)
-export async function configureAudioForPlayback() {
+export async function configureAudioForPlayback(allowsRecording: boolean = false) {
   try {
     await setAudioModeAsync({
       playsInSilentMode: true,
-      allowsRecording: true, // Needs to allow recording so tuner + player can work together
+      allowsRecording: allowsRecording,
       shouldRouteThroughEarpiece: false, // Ensure audio plays through speaker!
     });
   } catch (e) {

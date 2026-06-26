@@ -6,7 +6,7 @@ import { TUNING_PRESETS, COMMA_SCALE } from '../utils/tsmEngine';
 import { startTuning, stopTuning, checkMicrophonePermission } from '../utils/tunerService';
 import { DeviationGauge } from '../components/DeviationGauge';
 import { Pegboard } from '../components/Pegboard';
-import { Info, Sliders, Music, Radio } from 'lucide-react-native';
+import { Info, Sliders, Music, Radio, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/theme';
 import { playUdPluck } from '../utils/audioPlayer';
 
@@ -53,6 +53,8 @@ const SeljukPattern = ({ strokeColor }: { strokeColor: string }) => (
 export default function HomeScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+
+  const [isKomaMenuOpen, setIsKomaMenuOpen] = useState<boolean>(false);
 
   const {
     currentPreset,
@@ -171,46 +173,76 @@ export default function HomeScreen() {
 
         {/* Microtonal Perde Picker (only for Koma Mode) */}
         {tunerMode === 'koma' && (
-          <View style={[styles.selectorContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+          <View style={[styles.selectorContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.15)', zIndex: 999 }]}>
             <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>HEDEF KOMA PERDESİ SEÇİN</Text>
             
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.perdePickerScroll}
-              contentContainerStyle={styles.perdePickerContainer}
-            >
-              {COMMA_SCALE.map((perde, index) => {
-                const isSelected = selectedPerdeIndex === index;
-                const isNamed = perde.name !== `${perde.westernName} (${perde.commaIndex}k)` && perde.name.length > 0;
-                
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.perdeCard,
-                      { backgroundColor: colors.background, borderColor: 'rgba(0,0,0,0.03)' },
-                      isSelected && { borderColor: colors.secondary, backgroundColor: 'rgba(115, 92, 0, 0.08)' }
-                    ]}
-                    onPress={() => setSelectedPerdeIndex(index)}
-                    activeOpacity={0.8}
+            <View style={[styles.dropdownSection, { width: '100%' }]}>
+              <TouchableOpacity
+                style={[
+                  styles.dropdownButton,
+                  { backgroundColor: colors.background, borderColor: 'rgba(111,70,31,0.15)' }
+                ]}
+                onPress={() => setIsKomaMenuOpen(!isKomaMenuOpen)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.dropdownLeft}>
+                  <Sliders size={18} color={colors.primary} style={styles.dropdownIcon} />
+                  <Text style={[styles.dropdownLabel, { color: colors.textSecondary }]}>
+                    Perde:{' '}
+                    <Text style={[styles.dropdownSelectedValue, { color: colors.secondary, fontFamily: Fonts.serifBold }]}>
+                      {activePerde.name}
+                    </Text>
+                  </Text>
+                </View>
+                {isKomaMenuOpen ? (
+                  <ChevronUp size={18} color={colors.secondary} />
+                ) : (
+                  <ChevronDown size={18} color={colors.secondary} />
+                )}
+              </TouchableOpacity>
+
+              {isKomaMenuOpen && (
+                <View style={[styles.verticalMenuList, { backgroundColor: colors.background, borderColor: 'rgba(111,70,31,0.15)', position: 'absolute', top: 50, left: 0, right: 0, maxHeight: 200, zIndex: 9999 }]}>
+                  <ScrollView
+                    style={styles.menuScroll}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
                   >
-                    <Text style={[
-                      styles.perdeCardName,
-                      { color: colors.text },
-                      isSelected && { color: colors.secondary, fontFamily: Fonts.sansBold }
-                    ]}>
-                      {perde.name}
-                    </Text>
-                    <Text style={[styles.perdeCardSub, { color: colors.textSecondary }]}>
-                      {perde.westernName} | {perde.commaIndex}k
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <Text style={[styles.presetDescription, { color: colors.textSecondary }]}>
-              {activePerde.name} perdesine akort ediliyor. Dügâh (La) referansına göre {activePerde.commaIndex} koma kaydırılmıştır.
+                    {COMMA_SCALE.map((perde, index) => {
+                      const isSelected = selectedPerdeIndex === index;
+                      return (
+                        <TouchableOpacity
+                          key={index}
+                          style={[
+                            styles.menuItem,
+                            { borderBottomColor: colors.backgroundElement },
+                            isSelected && { backgroundColor: 'rgba(115, 92, 0, 0.08)' }
+                          ]}
+                          onPress={() => {
+                            setSelectedPerdeIndex(index);
+                            setIsKomaMenuOpen(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.menuItemName,
+                            { color: colors.text },
+                            isSelected && { color: colors.secondary, fontFamily: Fonts.sansBold }
+                          ]}>
+                            {perde.name}
+                          </Text>
+                          <Text style={[styles.menuItemSub, { color: colors.textSecondary }]}>
+                            {perde.westernName} | {perde.commaIndex}k
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
+            <Text style={[styles.presetDescription, { color: colors.textSecondary, marginTop: 10 }]}>
+              Dügâh (La) referansına göre {activePerde.commaIndex} koma kaydırılmıştır.
             </Text>
           </View>
         )}
@@ -336,6 +368,62 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     marginBottom: 15,
+  },
+  dropdownSection: {
+    position: 'relative',
+    zIndex: 999,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 4,
+    borderWidth: 1.5,
+  },
+  dropdownLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dropdownIcon: {
+    marginRight: 10,
+  },
+  dropdownLabel: {
+    fontSize: 14,
+    fontFamily: Fonts.sans,
+  },
+  dropdownSelectedValue: {
+    fontSize: 14.5,
+  },
+  verticalMenuList: {
+    borderRadius: 4,
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  menuScroll: {
+    padding: 4,
+  },
+  menuItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  menuItemName: {
+    fontSize: 14,
+    fontFamily: Fonts.sans,
+  },
+  menuItemSub: {
+    fontSize: 10,
+    fontFamily: Fonts.sans,
+    opacity: 0.7,
   },
   selectorLabel: {
     fontSize: 10,

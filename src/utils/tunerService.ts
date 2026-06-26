@@ -136,6 +136,17 @@ export async function stopTuning() {
     clearInterval(simulationInterval);
     simulationInterval = null;
   }
+
+  // Reset Audio Session to disable recording and restore normal media routing
+  try {
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: false,
+      shouldRouteThroughEarpiece: false,
+    });
+  } catch (e) {
+    console.warn('Failed to reset audio mode on stop tuning', e);
+  }
 }
 
 // Simulates real-time microphone input for testing in Expo Go / Web

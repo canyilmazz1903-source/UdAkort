@@ -43,9 +43,10 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
   }, []);
 
   useEffect(() => {
-    Animated.timing(animatedCents, {
+    Animated.spring(animatedCents, {
       toValue: isListening && frequency > 0 ? centsDeviation : 0,
-      duration: 140, // glides smoothly over 140ms
+      stiffness: 90,
+      damping: 16,
       useNativeDriver: false,
     }).start();
   }, [centsDeviation, frequency, isListening]);
