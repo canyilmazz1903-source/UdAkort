@@ -5,7 +5,6 @@ import { useAppStore } from '../store/useAppStore';
 import { TUNING_PRESETS, COMMA_SCALE } from '../utils/tsmEngine';
 import { startTuning, stopTuning, checkMicrophonePermission } from '../utils/tunerService';
 import { DeviationGauge } from '../components/DeviationGauge';
-import { Pegboard } from '../components/Pegboard';
 import { Info, Sliders, Music, Radio, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/theme';
 import { playUdPluck } from '../utils/audioPlayer';
@@ -66,9 +65,11 @@ export default function HomeScreen() {
     hasMicPermission,
     tunerMode,
     selectedPerdeIndex,
+    activePegIndex,
     setPreset,
     setTunerMode,
     setSelectedPerdeIndex,
+    setActivePegIndex,
   } = useAppStore();
 
   useEffect(() => {
@@ -86,16 +87,57 @@ export default function HomeScreen() {
 
   const activePerde = COMMA_SCALE[selectedPerdeIndex];
 
+  const handleStringPress = async (index: number) => {
+    const targetNote = currentPreset.notes[index];
+    setActivePegIndex(index);
+
+    const targetFreq = targetNote.frequency;
+    
+    // Find closest base sample
+    const samples = [
+      { name: 'cs2', freq: 69.30 },
+      { name: 'fs2', freq: 92.50 },
+      { name: 'b2', freq: 123.47 },
+      { name: 'e3', freq: 164.81 },
+      { name: 'a3', freq: 220.00 },
+      { name: 'd4', freq: 293.66 },
+      { name: 'g4', freq: 392.00 }
+    ];
+
+    let bestSample = samples[0];
+    let minRatioDiff = Math.abs(Math.log2(targetFreq / bestSample.freq));
+
+    for (let i = 1; i < samples.length; i++) {
+      const ratioDiff = Math.abs(Math.log2(targetFreq / samples[i].freq));
+      if (ratioDiff < minRatioDiff) {
+        minRatioDiff = ratioDiff;
+        bestSample = samples[i];
+      }
+    }
+
+    const playbackRate = targetFreq / bestSample.freq;
+
+    // Play the synthesised Ud sample with pitch rate adjustment
+    await playUdPluck(bestSample.name, playbackRate);
+
+    // Reset active peg visual highlight after 3 seconds (when sound fades)
+    setTimeout(() => {
+      if (useAppStore.getState().activePegIndex === index) {
+        setActivePegIndex(null);
+      }
+    }, 3000);
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       {/* Seljuk geometric background */}
       <SeljukPattern strokeColor={colors.primary} />
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <View style={styles.mainContainer}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.appTitle, { color: colors.primary, fontFamily: Fonts.serifBold }]}>
-            UdAkort <Text style={[styles.versionText, { color: colors.secondary }]}>2.1</Text>
+            UdAkort <Text style={[styles.versionText, { color: colors.secondary }]}>2.2</Text>
           </Text>
           <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
             Türk Musikisi Akort Sistemi (AEÜ)
@@ -257,9 +299,44 @@ export default function HomeScreen() {
           isListening={isListening}
         />
 
-        {/* Pegboard (Standard Mode) or Reference Player (Koma Mode) */}
+        {/* Pegboard replacement: Row of Plucking Buttons (Standard Mode) or Reference Player (Koma Mode) */}
         {tunerMode === 'standard' ? (
-          <Pegboard notes={currentPreset.notes} />
+          <View style={styles.stringButtonsRow}>
+            {currentPreset.notes.slice().reverse().map((note, revIdx) => {
+              const idx = currentPreset.notes.length - 1 - revIdx;
+              const isSelected = activePegIndex === idx;
+              const isDetected = closestNote && closestNote.westernNote === note.westernNote;
+              const isActive = isSelected || isDetected;
+              
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.stringButton,
+                    { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.15)' },
+                    isActive && { backgroundColor: 'rgba(115, 92, 0, 0.12)', borderColor: colors.secondary }
+                  ]}
+                  onPress={() => handleStringPress(idx)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.stringButtonName,
+                    { color: colors.text },
+                    isActive && { color: colors.secondary, fontFamily: Fonts.sansBold }
+                  ]}>
+                    {note.name.split(' ')[0]}
+                  </Text>
+                  <Text style={[
+                    styles.stringButtonWestern,
+                    { color: colors.textSecondary },
+                    isActive && { color: colors.secondary }
+                  ]}>
+                    {note.westernNote}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         ) : (
           <View style={[styles.komaHelperContainer, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
             <View style={styles.komaHelperHeader}>
@@ -295,7 +372,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         )}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -311,11 +388,13 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  scrollContainer: {
+  mainContainer: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 25 : 10,
-    paddingBottom: Platform.OS === 'ios' ? 100 : 120,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 30,
     alignItems: 'stretch',
+    justifyContent: 'space-between',
   },
   header: {
     alignItems: 'center',
@@ -540,5 +619,29 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Fonts.sans,
     lineHeight: 14,
+  },
+  stringButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 6,
+    marginTop: 15,
+  },
+  stringButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stringButtonName: {
+    fontSize: 12,
+    fontFamily: Fonts.sans,
+  },
+  stringButtonWestern: {
+    fontSize: 9,
+    fontFamily: Fonts.mono,
+    marginTop: 2,
   },
 });
