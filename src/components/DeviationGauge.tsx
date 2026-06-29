@@ -51,6 +51,21 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
     }).start();
   }, [centsDeviation, frequency, isListening]);
 
+  // Scale animation for note name changes (pop effect when string locks)
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (noteName) {
+      scaleAnim.setValue(0.7); // start smaller
+      Animated.spring(scaleAnim, {
+        toValue: 1.0,
+        friction: 4, // bounce effect
+        tension: 140,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [noteName]);
+
   // Map cents deviation (-50 to +50) to angle (-120 to +120 degrees)
   const clampedCents = Math.max(-50, Math.min(50, smoothCents));
   const angleDeg = (clampedCents / 50) * 120;
@@ -158,7 +173,7 @@ export const DeviationGauge: React.FC<DeviationGaugeProps> = ({
           {isListening && frequency > 0 ? (
             <>
               <Text style={[styles.westernNote, { color: colors.textSecondary }]}>{westernNote}</Text>
-              <Text style={[styles.noteName, { color: activeColor, fontFamily: Fonts.serifBold }]}>{noteName}</Text>
+              <Animated.Text style={[styles.noteName, { color: activeColor, fontFamily: Fonts.serifBold, transform: [{ scale: scaleAnim }] }]}>{noteName}</Animated.Text>
               <Text style={[styles.frequency, { color: colors.textSecondary }]}>{frequency.toFixed(2)} Hz</Text>
               
               <View style={styles.deviationRow}>

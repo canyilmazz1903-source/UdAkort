@@ -11,7 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.udakort.app",
       "appleTeamId": "84P45WA3X4",
-      "buildNumber": "22",
+      "buildNumber": "23",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.udakort.app",
-      "versionCode": 22,
+      "versionCode": 23,
       "permissions": [
         "RECORD_AUDIO"
       ],

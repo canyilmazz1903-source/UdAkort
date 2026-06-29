@@ -13,6 +13,9 @@ try {
 
 let subscription: any = null;
 let simulationInterval: any = null;
+let lastTargetNoteKey: string | null = null;
+let smoothedCents = 0;
+let smoothedKomas = 0;
 
 export async function requestMicrophonePermission(): Promise<boolean> {
   try {
@@ -79,26 +82,59 @@ export async function startTuning() {
       
       subscription = PitchDetection.addListener((event: { frequency: number }) => {
         const freq = event.frequency;
-        if (freq > 40 && freq < 1000) { // Limit to Ud frequency range
+        
+        // 1. High frequency filter: Ignore frequencies above 480 Hz (Sol G4 is 392Hz, highest note is <410Hz)
+        if (freq > 40 && freq < 480) {
           const state = useAppStore.getState();
           const preset = state.currentPreset;
 
+          let targetNoteName = '';
+          let targetWesternNote = '';
+          let targetFreq = 0;
+          let centsDeviation = 0;
+          let komaDeviation = 0;
+          let closestNoteObj: any = null;
+
           if (state.tunerMode === 'koma') {
             const selectedPerde = COMMA_SCALE[state.selectedPerdeIndex];
-            const targetFreq = komasToHz(selectedPerde.commaIndex - 9, preset.notes[2].frequency);
-            const centsDeviation = hzToCents(freq, targetFreq);
-            const komaDeviation = hzToKomas(freq, targetFreq);
-
-            state.setDetectedFrequency(
-              freq,
-              { name: selectedPerde.name, westernNote: selectedPerde.westernName, frequency: targetFreq },
-              centsDeviation,
-              komaDeviation
-            );
+            targetFreq = komasToHz(selectedPerde.commaIndex - 9, preset.notes[2].frequency);
+            centsDeviation = hzToCents(freq, targetFreq);
+            komaDeviation = hzToKomas(freq, targetFreq);
+            targetNoteName = selectedPerde.name;
+            targetWesternNote = selectedPerde.westernName;
+            closestNoteObj = { name: targetNoteName, westernNote: targetWesternNote, frequency: targetFreq };
           } else {
-            const { note, centsDeviation, komaDeviation } = getClosestTuningNote(freq, preset);
-            state.setDetectedFrequency(freq, note, centsDeviation, komaDeviation);
+            const { note, centsDeviation: rawCents, komaDeviation: rawKomas } = getClosestTuningNote(freq, preset);
+            centsDeviation = rawCents;
+            komaDeviation = rawKomas;
+            closestNoteObj = note;
+            targetNoteName = note ? note.name : '';
+            targetWesternNote = note ? note.westernNote : '';
           }
+
+          // 2. Exponential Moving Average Smoothing
+          const currentTargetKey = state.tunerMode === 'koma' 
+            ? `koma-${state.selectedPerdeIndex}` 
+            : targetWesternNote;
+
+          if (lastTargetNoteKey !== currentTargetKey) {
+            // Reset smoothing history when changing target string/note to prevent slow needle drift
+            smoothedCents = centsDeviation;
+            smoothedKomas = komaDeviation;
+            lastTargetNoteKey = currentTargetKey;
+          } else {
+            // Apply smoothing: alpha = 0.22 (lower is smoother/slower, higher is faster)
+            const alpha = 0.22;
+            smoothedCents = alpha * centsDeviation + (1 - alpha) * smoothedCents;
+            smoothedKomas = alpha * komaDeviation + (1 - alpha) * smoothedKomas;
+          }
+
+          state.setDetectedFrequency(
+            freq,
+            closestNoteObj,
+            smoothedCents,
+            smoothedKomas
+          );
         }
       });
       return;
@@ -182,19 +218,40 @@ function startSimulatorTuning() {
     const simulatedFreq = targetFreq + noise;
     angle += 0.15;
 
-    if (store.tunerMode === 'koma') {
-      const centsDeviation = hzToCents(simulatedFreq, targetFreq);
-      const komaDeviation = hzToKomas(simulatedFreq, targetFreq);
+    let centsDeviation = 0;
+    let komaDeviation = 0;
+    let closestNoteObj: any = null;
 
-      store.setDetectedFrequency(
-        simulatedFreq,
-        { name: targetNoteName, westernNote: targetWesternNote, frequency: targetFreq },
-        centsDeviation,
-        komaDeviation
-      );
+    if (store.tunerMode === 'koma') {
+      centsDeviation = hzToCents(simulatedFreq, targetFreq);
+      komaDeviation = hzToKomas(simulatedFreq, targetFreq);
+      closestNoteObj = { name: targetNoteName, westernNote: targetWesternNote, frequency: targetFreq };
     } else {
-      const { note, centsDeviation, komaDeviation } = getClosestTuningNote(simulatedFreq, preset);
-      store.setDetectedFrequency(simulatedFreq, note, centsDeviation, komaDeviation);
+      const { note, centsDeviation: rawCents, komaDeviation: rawKomas } = getClosestTuningNote(simulatedFreq, preset);
+      centsDeviation = rawCents;
+      komaDeviation = rawKomas;
+      closestNoteObj = note;
     }
+
+    const currentTargetKey = store.tunerMode === 'koma' 
+      ? `koma-${store.selectedPerdeIndex}` 
+      : (closestNoteObj ? closestNoteObj.westernNote : '');
+
+    if (lastTargetNoteKey !== currentTargetKey) {
+      smoothedCents = centsDeviation;
+      smoothedKomas = komaDeviation;
+      lastTargetNoteKey = currentTargetKey;
+    } else {
+      const alpha = 0.22;
+      smoothedCents = alpha * centsDeviation + (1 - alpha) * smoothedCents;
+      smoothedKomas = alpha * komaDeviation + (1 - alpha) * smoothedKomas;
+    }
+
+    store.setDetectedFrequency(
+      simulatedFreq,
+      closestNoteObj,
+      smoothedCents,
+      smoothedKomas
+    );
   }, 150);
 }

@@ -319,6 +319,9 @@ export default function HomeScreen() {
                   onPress={() => handleStringPress(idx)}
                   activeOpacity={0.8}
                 >
+                  {isDetected && (
+                    <View style={[styles.lockIndicator, { backgroundColor: colors.secondary }]} />
+                  )}
                   <Text style={[
                     styles.stringButtonName,
                     { color: colors.text },
@@ -643,5 +646,13 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: Fonts.mono,
     marginTop: 2,
+  },
+  lockIndicator: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
 });

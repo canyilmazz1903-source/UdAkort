@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, useColorScheme, Linking } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { CommaRibbon } from '../components/CommaRibbon';
 import { StaffNotation } from '../components/StaffNotation';
@@ -160,6 +160,12 @@ export default function MakamScreen() {
     if (id === 'rast' || id === 'nihavend') return 146.83; // Rast Sol3 (sounds like D3)
     if (id === 'segah' || id === 'huzzam') return 173.88; // Segah Si3 (5k flat)
     return 164.81; // Dügah La3 (sounds like E3)
+  };
+
+  const handleFindNotation = (title: string, composer: string) => {
+    const query = `TRT nota arsivi ${title} ${composer}`;
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    Linking.openURL(url).catch((err) => console.warn("Failed to open URL", err));
   };
 
   // Play a single note from the makam scale under selected transposition
@@ -523,14 +529,44 @@ export default function MakamScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>İMZA ESERLER ARŞİVİ</Text>
           </View>
 
+          <View style={[styles.notationInfoBox, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.1)' }]}>
+            <Text style={[styles.notationInfoTitle, { color: colors.primary, fontFamily: Fonts.serifBold }]}>Nota Arşivleri Hakkında</Text>
+            <Text style={[styles.notationInfoDesc, { color: colors.textSecondary }]}>
+              Klasik eserlerin resmi TRT ve Neyzen notasyonlarına ulaşmak için "Notayı Bul" butonuna basarak Google üzerinde aratabilir ve PDF dosyalarını indirebilirsiniz. Ayrıca popüler arşiv sitelerini ziyaret edebilirsiniz:
+            </Text>
+            <View style={styles.archiveLinksRow}>
+              <TouchableOpacity onPress={() => Linking.openURL('http://www.trtnotaarsivi.com')} style={styles.archiveLinkBtn}>
+                <Text style={[styles.archiveLinkText, { color: colors.secondary, fontFamily: Fonts.sansBold }]}>TRT Not Arşivi</Text>
+              </TouchableOpacity>
+              <Text style={{ color: colors.textSecondary }}>•</Text>
+              <TouchableOpacity onPress={() => Linking.openURL('http://www.neyzen.com')} style={styles.archiveLinkBtn}>
+                <Text style={[styles.archiveLinkText, { color: colors.secondary, fontFamily: Fonts.sansBold }]}>Neyzen.com</Text>
+              </TouchableOpacity>
+              <Text style={{ color: colors.textSecondary }}>•</Text>
+              <TouchableOpacity onPress={() => Linking.openURL('https://divanmakam.com')} style={styles.archiveLinkBtn}>
+                <Text style={[styles.archiveLinkText, { color: colors.secondary, fontFamily: Fonts.sansBold }]}>Dîvân Makam</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.compositionsGrid}>
             {selectedMakam.compositions.map((comp, idx) => (
               <View key={idx} style={[styles.compositionCard, { backgroundColor: colors.backgroundElement, borderColor: 'rgba(111,70,31,0.06)' }]}>
-                <Music size={18} color={colors.textSecondary} style={styles.compIcon} />
-                <View style={styles.compInfo}>
-                  <Text style={[styles.compTitle, { color: colors.text }]}>{comp.title}</Text>
-                  <Text style={[styles.compComposer, { color: colors.textSecondary }]}>{comp.composer} ({comp.form})</Text>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <Music size={18} color={colors.textSecondary} style={styles.compIcon} />
+                  <View style={styles.compInfo}>
+                    <Text style={[styles.compTitle, { color: colors.text }]}>{comp.title}</Text>
+                    <Text style={[styles.compComposer, { color: colors.textSecondary }]}>{comp.composer} ({comp.form})</Text>
+                  </View>
                 </View>
+                <TouchableOpacity
+                  style={[styles.findNotationButton, { backgroundColor: colors.background, borderColor: colors.backgroundSelected }]}
+                  onPress={() => handleFindNotation(comp.title, comp.composer)}
+                  activeOpacity={0.7}
+                >
+                  <Compass size={14} color={colors.secondary} />
+                  <Text style={[styles.findNotationText, { color: colors.secondary, fontFamily: Fonts.sansBold }]}>Notayı Bul</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
@@ -861,5 +897,45 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Fonts.sans,
     marginTop: 2,
+  },
+  notationInfoBox: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 14,
+    marginBottom: 12,
+  },
+  notationInfoTitle: {
+    fontSize: 14,
+    marginBottom: 6,
+  },
+  notationInfoDesc: {
+    fontSize: 11,
+    fontFamily: Fonts.sans,
+    lineHeight: 16,
+  },
+  archiveLinksRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    flexWrap: 'wrap',
+  },
+  archiveLinkBtn: {
+    paddingVertical: 2,
+  },
+  archiveLinkText: {
+    fontSize: 11,
+  },
+  findNotationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  findNotationText: {
+    fontSize: 10,
   },
 });
