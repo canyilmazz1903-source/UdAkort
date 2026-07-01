@@ -1,4 +1,4 @@
-import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync, preload } from 'expo-audio';
 
 // Static asset mapping because React Native / Metro does not support dynamic requires
 const soundAssets: Record<string, any> = {
@@ -14,6 +14,8 @@ const soundAssets: Record<string, any> = {
 };
 
 let playerInstance: ReturnType<typeof createAudioPlayer> | null = null;
+let dumPlayer: ReturnType<typeof createAudioPlayer> | null = null;
+let tekPlayer: ReturnType<typeof createAudioPlayer> | null = null;
 
 // Configures Audio Category for Playback (ensures sound plays even in Silent Mode on iOS)
 export async function configureAudioForPlayback(allowsRecording: boolean = false) {
@@ -21,10 +23,30 @@ export async function configureAudioForPlayback(allowsRecording: boolean = false
     await setAudioModeAsync({
       playsInSilentMode: true,
       allowsRecording: allowsRecording,
-      shouldRouteThroughEarpiece: false, // Ensure audio plays through speaker!
+      shouldRouteThroughEarpiece: false, // Force audio to speaker
     });
   } catch (e) {
     console.warn('Failed to configure audio mode', e);
+  }
+}
+
+// Initial audio engine setup called on app startup
+export async function initAudioEngine() {
+  try {
+    // 1. Initial audio mode configuration
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: false,
+      shouldRouteThroughEarpiece: false,
+    });
+    
+    // 2. Preload all sound assets to memory
+    for (const key of Object.keys(soundAssets)) {
+      preload(soundAssets[key]);
+    }
+    console.log('Audio engine initialized and assets preloaded.');
+  } catch (error) {
+    console.error('Failed to initialize audio engine:', error);
   }
 }
 
@@ -38,11 +60,24 @@ export async function playMetronomeClick(type: 'dum' | 'tek') {
       return;
     }
 
-    // Use a fresh player instance for metronome clicks to avoid overlay queue lagging
-    const player = createAudioPlayer(asset);
-    player.shouldCorrectPitch = false;
-    player.volume = 1.0;
-    player.play();
+    // Reuse static player instances to avoid allocating new player objects (which leak native resources)
+    if (type === 'dum') {
+      if (!dumPlayer) {
+        dumPlayer = createAudioPlayer(asset, { downloadFirst: true });
+        dumPlayer.shouldCorrectPitch = false;
+        dumPlayer.volume = 1.0;
+      }
+      await dumPlayer.seekTo(0);
+      dumPlayer.play();
+    } else {
+      if (!tekPlayer) {
+        tekPlayer = createAudioPlayer(asset, { downloadFirst: true });
+        tekPlayer.shouldCorrectPitch = false;
+        tekPlayer.volume = 1.0;
+      }
+      await tekPlayer.seekTo(0);
+      tekPlayer.play();
+    }
   } catch (error) {
     console.error('Error playing metronome click:', error);
   }
@@ -58,17 +93,19 @@ export async function playUdPluck(sampleName: string, rate: number = 1.0) {
       return;
     }
 
-    // Stop and dereference previous sound if it is playing/loaded
+    // Stop and release previous player instance to avoid native memory leaks
     if (playerInstance) {
       try {
         playerInstance.pause();
+        playerInstance.release();
       } catch (e) {
         // Ignore
       }
       playerInstance = null;
     }
 
-    const player = createAudioPlayer(asset);
+    // Pass downloadFirst: true to ensure Metro bundler assets are cached locally before playback
+    const player = createAudioPlayer(asset, { downloadFirst: true });
     player.shouldCorrectPitch = false;
     player.playbackRate = rate;
     player.volume = 1.0;
@@ -84,9 +121,10 @@ export async function stopCurrentSound() {
   if (playerInstance) {
     try {
       playerInstance.pause();
-      playerInstance.currentTime = 0;
+      playerInstance.release();
     } catch (e) {
       // Ignore
     }
+    playerInstance = null;
   }
 }

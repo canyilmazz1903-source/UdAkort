@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAreaView, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAreaView, useColorScheme, AppState } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useAppStore } from '../store/useAppStore';
+import { useFocusEffect } from 'expo-router';
 import { TUNING_PRESETS, COMMA_SCALE } from '../utils/tsmEngine';
 import { startTuning, stopTuning, checkMicrophonePermission } from '../utils/tunerService';
 import { DeviationGauge } from '../components/DeviationGauge';
@@ -72,18 +73,37 @@ export default function HomeScreen() {
     setActivePegIndex,
   } = useAppStore();
 
-  useEffect(() => {
-    const initTuning = async () => {
-      await checkMicrophonePermission();
-      await startTuning();
-    };
-    initTuning();
-    
-    // Stop listening when leaving the screen
-    return () => {
-      stopTuning();
-    };
-  }, [tunerMode, selectedPerdeIndex]); // Restart tuning when mode changes
+  // Manage tuner lifecycle based on tab focus and app active state
+  useFocusEffect(
+    React.useCallback(() => {
+      let isFocused = true;
+
+      const initTuning = async () => {
+        if (!isFocused) return;
+        await checkMicrophonePermission();
+        await startTuning();
+      };
+      
+      initTuning();
+
+      // Listen to AppState changes (e.g. background/foreground)
+      const handleAppStateChange = (nextAppState: string) => {
+        if (nextAppState === 'background' || nextAppState === 'inactive') {
+          stopTuning();
+        } else if (nextAppState === 'active' && isFocused) {
+          initTuning();
+        }
+      };
+
+      const appStateSub = AppState.addEventListener('change', handleAppStateChange);
+
+      return () => {
+        isFocused = false;
+        stopTuning();
+        appStateSub.remove();
+      };
+    }, [tunerMode, selectedPerdeIndex]) // Restart if mode/perde changes while focused
+  );
 
   const activePerde = COMMA_SCALE[selectedPerdeIndex];
 
